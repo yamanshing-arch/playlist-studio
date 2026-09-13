@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Playlist Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col antialiased selection:bg-purple-500 selection:text-white pb-16">
+
+  <!-- ================= AUTH GATE SCREEN ================= -->
+  <div id="authGateScreen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
+    <div class="max-w-sm w-full space-y-6 my-auto">
+      <div class="space-y-2">
+        <div class="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-tr from-red-600 via-pink-600 to-purple-600 rounded-2xl shadow-xl shadow-purple-950/40 border border-purple-500/20">
+          <span class="text-2xl">🎬</span>
+        </div>
+        <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-red-500 via-pink-500 to-purple-400 bg-clip-text text-transparent">
+          Playlist Studio
+        </h1>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          The power-tool YouTube never gave you. Merge playlists, organize creator series in chronological order, and binge uninterrupted.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-2.5 text-left text-xs">
+        <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl flex items-start gap-3">
+          <span class="text-base p-1 bg-purple-950/60 rounded-md border border-purple-800/40">📂</span>
+          <div>
+            <span class="font-bold text-slate-200 block">Combine Playlists</span>
+            <span class="text-[11px] text-slate-400">Merge scattered lists into single, streamlined collections.</span>
+          </div>
+        </div>
+        <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl flex items-start gap-3">
+          <span class="text-base p-1 bg-blue-950/60 rounded-md border border-blue-800/40">⏱️</span>
+          <div>
+            <span class="font-bold text-slate-200 block">Chronological Episode Order</span>
+            <span class="text-[11px] text-slate-400">Fix reverse autoplay so Episode 1 plays before Episode 2.</span>
+          </div>
+        </div>
+        <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl flex items-start gap-3">
+          <span class="text-base p-1 bg-emerald-950/60 rounded-md border border-emerald-800/40">🔄</span>
+          <div>
+            <span class="font-bold text-slate-200 block">Smart Delta Sync</span>
+            <span class="text-[11px] text-slate-400">Add newly uploaded episodes to existing playlists with minimal quota.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3 pt-1">
+        <button onclick="handleAuth()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold py-3.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 active:scale-[0.99] transition">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          <span>Connect with YouTube</span>
+        </button>
+        <div id="authGateStatus" class="text-[11px] font-mono text-slate-500">Secure authorization via Google Identity</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SLIDE-OUT DRAWER ================= -->
+  <div id="drawerOverlay" onclick="toggleDrawer()" class="fixed inset-0 bg-black/60 z-40 hidden transition-opacity"></div>
+  <div id="sideDrawer" class="fixed top-0 left-0 bottom-0 w-80 bg-slate-900 border-r border-slate-800 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-5 overflow-y-auto">
+    <div class="space-y-6">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h2 class="text-xs font-black uppercase tracking-wider text-purple-400">Navigation</h2>
+        <button onclick="toggleDrawer()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <nav class="space-y-1">
+        <button onclick="navigateTo('library')" id="nav-library" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-purple-300 flex items-center gap-3">
+          <span>📂</span> My Library & Combiner
+        </button>
+        <button onclick="navigateTo('search')" id="nav-search" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 flex items-center gap-3">
+          <span>🔍</span> Creator Search Explorer
+        </button>
+      </nav>
+
+      <!-- Custom Client ID & Setup Guide -->
+      <div class="pt-4 border-t border-slate-800 space-y-2 text-left">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-black uppercase tracking-wider text-purple-300">Google Client ID</h3>
+          <button onclick="openQuotaGuideModal()" class="text-[11px] text-purple-400 underline hover:text-purple-300">Setup Guide ↗</button>
+        </div>
+        <p class="text-[10px] text-slate-400 leading-relaxed">
+          Need higher limits? Enter your own Google Cloud Client ID for an isolated 10,000–100,000 unit allowance.
+        </p>
+        <input id="customClientIdInput" type="text" placeholder="Paste Client ID..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono focus:outline-none focus:border-purple-500" />
+        <div class="flex gap-2">
+          <button onclick="saveCustomClientId()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 rounded-lg text-[11px] transition">Save & Apply</button>
+          <button onclick="resetCustomClientId()" class="px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-lg transition">Reset</button>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-800 space-y-3">
+        <h3 class="text-xs font-black uppercase tracking-wider text-slate-400">Account Session</h3>
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+          <div class="text-[11px] text-emerald-400 flex items-center gap-1.5 font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Auto-Login Session Active
+          </div>
+          <p class="text-[10px] text-slate-500">Your token is preserved across browser reloads.</p>
+        </div>
+        <button onclick="disconnectAccount(false)" class="w-full bg-rose-950/40 hover:bg-rose-900 border border-rose-800/80 text-rose-300 text-xs py-2 rounded-lg font-semibold transition">
+          Disconnect Account
+        </button>
+      </div>
+    </div>
+
+    <div class="pt-4 border-t border-slate-800 space-y-2">
+      <button onclick="openAboutModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-purple-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition">
+        <span>ℹ️</span> About & Credits
+      </button>
+      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.3</div>
+    </div>
+  </div>
+
+  <!-- ================= ITEM PREVIEW BOTTOM SHEET ================= -->
+  <div id="previewSheetOverlay" onclick="closePreviewSheet()" class="fixed inset-0 bg-black/70 z-50 hidden transition-opacity"></div>
+  <div id="previewSheet" class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-slate-900 border-t border-slate-800 rounded-t-3xl p-5 z-50 transform translate-y-full transition-transform duration-300 space-y-4 shadow-2xl">
+    <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-2"></div>
+    <div class="flex items-start gap-3">
+      <img id="previewThumb" class="w-24 h-16 object-cover rounded-xl bg-slate-950 shrink-0" src="" alt="Thumbnail" />
+      <div class="flex-1 min-w-0 text-left">
+        <h4 id="previewTitle" class="text-sm font-bold text-slate-100 leading-snug"></h4>
+        <p id="previewSubtitle" class="text-xs text-slate-400 mt-1"></p>
+      </div>
+    </div>
+    <div id="previewExtra" class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 text-left leading-relaxed max-h-36 overflow-y-auto"></div>
+    <div class="flex gap-2">
+      <a id="previewWatchBtn" href="#" target="_blank" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+        <span>▶</span> Watch on YouTube
+      </a>
+      <button onclick="closePreviewSheet()" class="px-5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition">
+        Done
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= QUOTA & SETUP GUIDE MODAL ================= -->
+  <div id="quotaGuideModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-lg w-full rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto text-left text-xs text-slate-300">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-sm font-black text-purple-400 uppercase tracking-wide">Client ID & 100k Quota Guide</h3>
+        <button onclick="closeQuotaGuideModal()" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-3 leading-relaxed">
+        <p class="text-slate-300">
+          By default, the YouTube Data API provides <strong>10,000 units/day</strong> per project. Adding one video costs 50 units (~200 videos total). Use your own project to get an isolated quota pool or request an increase to 100,000 units.
+        </p>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+          <p class="font-bold text-purple-300 text-[11px] uppercase tracking-wide">Step 1: Create OAuth Client ID</p>
+          <ol class="list-decimal list-inside space-y-1 text-slate-400 text-[11px]">
+            <li>Open the <a href="https://console.cloud.google.com/" target="_blank" class="text-purple-400 underline">Google Cloud Console</a> and create a project.</li>
+            <li>Go to <strong>APIs & Services → Library</strong>, find <strong>YouTube Data API v3</strong>, and click <strong>Enable</strong>.</li>
+            <li>Under <strong>OAuth consent screen</strong>, select <strong>External</strong>, complete the required details, and add your email under <strong>Test users</strong>.</li>
+            <li>Go to <strong>Credentials → Create Credentials → OAuth client ID</strong>.</li>
+            <li>Select <strong>Web application</strong>. Under <strong>Authorized JavaScript origins</strong>, add this site's exact URL.</li>
+            <li>Copy the <strong>Client ID</strong>, paste it into the drawer menu, and click <strong>Save & Apply</strong>.</li>
+          </ol>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+          <p class="font-bold text-emerald-300 text-[11px] uppercase tracking-wide">Step 2: Request Quota Extension (100,000)</p>
+          <ol class="list-decimal list-inside space-y-1 text-slate-400 text-[11px]">
+            <li>In Google Cloud Console, navigate to <strong>IAM & Admin → Quotas & System Limits</strong>.</li>
+            <li>Filter for <strong>YouTube Data API v3</strong> and find <strong>Queries per day</strong>.</li>
+            <li>Click <strong>Edit Quotas</strong> and apply for a higher quota limit.</li>
+            <li>Request <strong>100,000</strong> units.</li>
+            <li>Describe the use case: <em>"Personal playlist marathon organizer creating sequential and episodic series."</em></li>
+          </ol>
+        </div>
+      </div>
+
+      <button onclick="closeQuotaGuideModal()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl text-xs">
+        Got It
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ABOUT & CREDITS MODAL ================= -->
+  <div id="aboutModal" class="fixed inset-0 bg-black/75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-md w-full rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-sm font-black text-purple-400 uppercase tracking-wide">About Playlist Studio</h3>
+        <button onclick="closeAboutModal()" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-300 text-left leading-relaxed">
+        <div>
+          <p class="font-bold text-slate-100 mb-1">💡 Why was this created?</p>
+          <p class="text-slate-400">YouTube does not allow users to combine multiple playlists or sort video runs chronologically into proper episode binge orders. Playlist Studio eliminates that friction, letting you organize, filter, deduplicate, and sort playlist marathons straight to your personal YouTube account.</p>
+        </div>
+
+        <div>
+          <p class="font-bold text-slate-100 mb-1">⚡ Core Capabilities</p>
+          <ul class="list-disc list-inside space-y-1 text-slate-400">
+            <li><strong class="text-slate-300">Intelligent Ordering:</strong> Sort collections by release date so series play in chronological story order.</li>
+            <li><strong class="text-slate-300">Delta Sync:</strong> Check linked source playlists for newly uploaded videos and append only the new episodes without regenerating.</li>
+            <li><strong class="text-slate-300">Automatic Batch Splitting:</strong> Automatically sections oversized marathons into sequential Part 1, Part 2, etc.</li>
+            <li><strong class="text-slate-300">Quota Guard:</strong> Real-time cost estimation and safety controls protect your daily YouTube quota limits.</li>
+          </ul>
+        </div>
+
+        <div class="pt-2 border-t border-slate-800">
+          <p class="font-bold text-slate-100 mb-1">🏆 Credits</p>
+          <p class="text-slate-300">
+            Conceived & developed by <strong class="text-purple-400 font-bold">Yaman</strong> in collaboration with <strong class="text-purple-400 font-bold">Gemini</strong>.
+          </p>
+          <p class="text-[11px] text-slate-500 mt-1">Built with YouTube Data API v3, Google Identity Services, and TailwindCSS.</p>
+        </div>
+      </div>
+
+      <button onclick="closeAboutModal()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl text-xs">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= CREATION PROGRESS MODAL ================= -->
+  <div id="progressModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6 space-y-4 text-center shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-800 mx-auto flex items-center justify-center text-xl animate-pulse">
+        ⏳
+      </div>
+      <div class="space-y-1">
+        <h4 id="progressModalTitle" class="text-sm font-bold text-slate-100">Building Your Playlist...</h4>
+        <p id="progressModalSubtitle" class="text-xs text-slate-400">Gathering items and checking order...</p>
+      </div>
+
+      <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
+        <div id="progressBarFill" class="bg-gradient-to-r from-purple-500 to-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <p id="progressCountLabel" class="text-[11px] font-mono text-slate-500">0 of 0 videos inserted</p>
+
+      <div class="pt-2">
+        <button id="stopProcessBtn" onclick="requestStopMerge()" class="w-full bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition active:scale-95">
+          <span>🛑</span> Stop Process
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SUCCESS MODAL ================= -->
+  <div id="successModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6 space-y-4 text-center">
+      <div class="w-12 h-12 rounded-full bg-emerald-950 border border-emerald-800 mx-auto flex items-center justify-center text-xl text-emerald-400">
+        ✓
+      </div>
+      <div class="space-y-1">
+        <h4 id="successModalHeading" class="text-base font-bold text-slate-100">Playlist Ready!</h4>
+        <p id="successModalDetail" class="text-xs text-slate-400">Your playlist has been compiled and saved to your YouTube library.</p>
+      </div>
+      <div id="successLinksContainer" class="space-y-2 pt-2"></div>
+      <button onclick="closeSuccessModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition mt-2">
+        Done
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between backdrop-blur">
+    <div class="flex items-center gap-3">
+      <button onclick="toggleDrawer()" class="text-slate-200 hover:text-white p-1 rounded-md active:bg-slate-800 text-lg">☰</button>
+      <h1 id="screenTitle" class="text-sm font-bold text-slate-200">My Library</h1>
+    </div>
+    <span class="text-[11px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Connected
+    </span>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 max-w-xl w-full mx-auto p-4 space-y-4">
+
+    <!-- VIEW 1: MY LIBRARY & COMBINER -->
+    <section id="view-library" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-bold text-slate-200">Select Playlists to Combine</h2>
+        <div class="flex items-center gap-3">
+          <button onclick="toggleSelectAllLibrary()" class="text-xs text-purple-400 hover:underline">Select All</button>
+          <button id="refreshBtn" onclick="loadMyPlaylists(true)" class="text-xs text-purple-400 hover:underline">Refresh</button>
+        </div>
+      </div>
+
+      <div class="relative">
+        <input id="libraryLocalFilterInput" oninput="renderLibraryPlaylists()" type="text" placeholder="🔎 Filter loaded playlists..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-purple-500 placeholder:text-slate-500" />
+      </div>
+
+      <div id="libraryPlaylistsContainer" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400">Loading playlists...</div>
+      </div>
+
+      <button id="loadMoreLibraryBtn" onclick="loadMyPlaylists(false)" class="hidden w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-xs font-semibold rounded-xl text-purple-300 border border-slate-800">
+        ⬇️ Load More Playlists
+      </button>
+
+      <div class="bg-slate-900/95 border border-slate-800 rounded-xl p-3.5 space-y-3 sticky bottom-4 shadow-2xl backdrop-blur">
+        <div class="flex justify-between items-center text-xs">
+          <label class="font-semibold text-purple-300">Name Your Combined Playlist</label>
+          <span id="librarySelectedCount" class="text-xs font-bold px-2 py-0.5 rounded-md bg-purple-950 text-purple-300 border border-purple-800/60">0 selected</span>
+        </div>
+
+        <input id="combinedTitleInput" type="text" placeholder="e.g. My Custom Super Marathon" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-purple-500" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+          <div>
+            <label class="text-[11px] text-slate-400 block mb-1 font-medium">Order by Release Date</label>
+            <select id="librarySortOrder" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+              <option value="oldest_first">📅 Release Date (Oldest to Newest)</option>
+              <option value="newest_first">⚡ Release Date (Newest to Oldest)</option>
+              <option value="original">📂 Original / Selection Order</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button id="libraryCombineBtn" onclick="combineLibraryPlaylists()" class="w-full bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap active:scale-95 transition">
+              Combine Playlists
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: CREATOR SEARCH -->
+    <section id="view-search" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-3">
+        <h2 class="text-xs font-bold text-purple-300 uppercase tracking-wide">Find Creator Content</h2>
+        <div class="space-y-2">
+          <div>
+            <label class="text-[11px] text-slate-400 font-medium block mb-1">Creator / Channel Name</label>
+            <input id="searchCreatorInput" type="text" placeholder="e.g. SMii7Y" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400 font-medium block mb-1">Search Topic, Series, or Playlist (Optional)</label>
+            <input id="searchKeywordInput" type="text" placeholder="e.g. COD Zombies, Minecraft, Lethal Company" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-purple-500" />
+          </div>
+        </div>
+        <button onclick="executeCreatorSearch()" class="w-full bg-purple-600 hover:bg-purple-500 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.99] transition">
+          <span>🔍</span> Search Catalog
+        </button>
+      </div>
+
+      <div id="creatorResultsArea" class="hidden space-y-3">
+        <div class="flex items-center gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+          <img id="creatorAvatar" class="w-12 h-12 rounded-full border border-purple-500 object-cover" src="" alt="avatar" />
+          <div class="text-left flex-1 min-w-0">
+            <h3 id="creatorTitle" class="text-sm font-bold text-slate-100 truncate"></h3>
+            <p id="creatorStats" class="text-xs text-slate-400"></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+          <button onclick="setCreatorMode('playlists')" id="mode-playlists" class="py-2 rounded-lg text-xs font-bold bg-purple-600 text-white">Playlists</button>
+          <button onclick="setCreatorMode('videos')" id="mode-videos" class="py-2 rounded-lg text-xs font-bold text-slate-400">Videos</button>
+        </div>
+
+        <!-- Dynamic Context Header for Videos Tab -->
+        <div id="videoSourceBanner" class="hidden bg-purple-950/40 border border-purple-800/60 rounded-xl p-2.5 px-3 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 truncate">
+            <span class="text-purple-300">📂 Inspecting:</span>
+            <span id="videoSourceTitle" class="font-bold text-slate-200 truncate"></span>
+          </div>
+          <button onclick="resetVideoSourceToUploads()" class="text-[11px] text-purple-400 hover:underline shrink-0 ml-2">Show All Uploads</button>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-3">
+          <div class="flex justify-between items-center text-xs">
+            <span id="contentCountLabel" class="text-slate-300 font-medium">0 items loaded</span>
+            <button onclick="toggleSelectAllCreatorItems()" class="text-purple-400 hover:underline">Select All</button>
+          </div>
+
+          <div class="relative">
+            <input id="creatorLocalFilterInput" oninput="renderCreatorList()" type="text" placeholder="🔎 Filter loaded results on screen..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-purple-500 placeholder:text-slate-500" />
+          </div>
+
+          <div id="creatorItemsList" class="max-h-80 overflow-y-auto space-y-2 pr-1"></div>
+
+          <button id="loadMoreCreatorBtn" onclick="fetchNextCreatorBatch()" class="hidden w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg text-purple-300">
+            ⬇️ Load More Items
+          </button>
+
+          <!-- Safe Quota Estimator & Controls -->
+          <div class="pt-3 border-t border-slate-800 space-y-2.5">
+            <div class="flex justify-between items-center text-xs">
+              <label class="font-semibold text-purple-300">Name for This Collection</label>
+              <span id="creatorSelectedBadge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-purple-950 text-purple-300 border border-purple-800/60">0 selected</span>
+            </div>
+
+            <div id="quotaEstimatorBar" class="p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px] flex items-center justify-between">
+              <span class="text-slate-400">Est. Quota Cost:</span>
+              <span id="quotaUnitEstimate" class="font-mono text-purple-300 font-semibold">0 units (0 videos)</span>
+            </div>
+
+            <input id="creatorNewPlaylistTitle" type="text" placeholder="e.g. SMii7Y Custom Series" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-purple-500" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+              <div>
+                <label class="text-[11px] text-slate-400 block mb-1 font-medium">Order by Release Date</label>
+                <select id="creatorSortOrder" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                  <option value="oldest_first">📅 Release Date (Oldest to Newest)</option>
+                  <option value="newest_first">⚡ Release Date (Newest to Oldest)</option>
+                  <option value="original">📂 Original / Selection Order</option>
+                </select>
+              </div>
+              <div class="flex items-end">
+                <button id="creatorCreateBtn" onclick="saveCreatorSelectionToPlaylist()" class="w-full bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap active:scale-95 transition">
+                  Create Playlist
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Global Console Status Box -->
+    <div id="statusCard" class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span id="statusSpinner" class="hidden w-2.5 h-2.5 rounded-full bg-purple-500 animate-ping"></span>
+        <span id="statusBox" class="font-mono text-[11px] text-slate-400">Ready.</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const DEFAULT_CLIENT_ID = "1061284018846-i3rj1351g3n538k0h5cpjfote8nc9ihm.apps.googleusercontent.com";
+    let activeClientId = localStorage.getItem("custom_yt_client_id") || DEFAULT_CLIENT_ID;
+    
+    let accessToken = null;
+    let tokenClient;
+    let isMergeCancelled = false;
+
+    // Library State
+    let libraryPlaylists = [];
+    let selectedLibraryIds = new Set();
+    let nextLibraryPageToken = null;
+
+    // Creator State
+    let currentCreatorData = null;
+    let creatorMode = "playlists";
+    let creatorPlaylists = [];
+    let creatorVideos = [];
+    let selectedCreatorItemIds = new Set();
+    let nextCreatorPlaylistsPageToken = null;
+    let nextCreatorVideosPageToken = null;
+    let totalCreatorVideosCount = 0;
+
+    // Focused Playlist for Inspection in Videos Tab
+    let activeInspectedPlaylist = null;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const customInput = document.getElementById("customClientIdInput");
+      if (customInput && localStorage.getItem("custom_yt_client_id")) {
+        customInput.value = localStorage.getItem("custom_yt_client_id");
+      }
+
+      const cachedToken = localStorage.getItem("yt_access_token");
+      const expiry = localStorage.getItem("yt_token_expiry");
+
+      if (cachedToken && expiry && Date.now() < parseInt(expiry, 10)) {
+        accessToken = cachedToken;
+        document.getElementById("authGateScreen").classList.add("hidden");
+        setStatus("Restored session successfully.", false);
+        loadMyPlaylists(true);
+      } else if (cachedToken) {
+        disconnectAccount(false);
+      }
+    });
+
+    function saveCustomClientId() {
+      const val = document.getElementById("customClientIdInput").value.trim();
+      if (!val) return alert("Please enter a valid Google Cloud Client ID.");
+      localStorage.setItem("custom_yt_client_id", val);
+      activeClientId = val;
+      tokenClient = null;
+      disconnectAccount(false);
+      alert("Custom Client ID saved! Connect using your dedicated project.");
+    }
+
+    function resetCustomClientId() {
+      localStorage.removeItem("custom_yt_client_id");
+      activeClientId = DEFAULT_CLIENT_ID;
+      document.getElementById("customClientIdInput").value = "";
+      tokenClient = null;
+      disconnectAccount(false);
+      alert("Restored default Client ID.");
+    }
+
+    function openQuotaGuideModal() {
+      const drawer = document.getElementById("sideDrawer");
+      if (!drawer.classList.contains("-translate-x-full")) toggleDrawer();
+      document.getElementById("quotaGuideModal").classList.remove("hidden");
+    }
+
+    function closeQuotaGuideModal() {
+      document.getElementById("quotaGuideModal").classList.add("hidden");
+    }
+
+    function openPreviewSheet(id, title, subtitle, thumb, extraInfo, watchUrl) {
+      document.getElementById("previewTitle").innerText = title;
+      document.getElementById("previewSubtitle").innerText = subtitle;
+      document.getElementById("previewThumb").src = thumb;
+      document.getElementById("previewExtra").innerText = extraInfo || "No additional description available.";
+      document.getElementById("previewWatchBtn").href = watchUrl;
+
+      document.getElementById("previewSheetOverlay").classList.remove("hidden");
+      document.getElementById("previewSheet").classList.remove("translate-y-full");
+    }
+
+    function closePreviewSheet() {
+      document.getElementById("previewSheetOverlay").classList.add("hidden");
+      document.getElementById("previewSheet").classList.add("translate-y-full");
+    }
+
+    function setStatus(msg, isLoading = false) {
+      document.getElementById("statusBox").innerText = msg;
+      const spinner = document.getElementById("statusSpinner");
+      isLoading ? spinner.classList.remove("hidden") : spinner.classList.add("hidden");
+    }
+
+    function toggleDrawer() {
+      const drawer = document.getElementById("sideDrawer");
+      const overlay = document.getElementById("drawerOverlay");
+      drawer.classList.toggle("-translate-x-full");
+      overlay.classList.toggle("hidden");
+    }
+
+    function openAboutModal() {
+      toggleDrawer();
+      document.getElementById("aboutModal").classList.remove("hidden");
+    }
+
+    function closeAboutModal() {
+      document.getElementById("aboutModal").classList.add("hidden");
+    }
+
+    function closeSuccessModal() {
+      document.getElementById("successModal").classList.add("hidden");
+    }
+
+    function requestStopMerge() {
+      if (confirm("Are you sure you want to stop adding videos?")) {
+        isMergeCancelled = true;
+        const btn = document.getElementById("stopProcessBtn");
+        btn.innerText = "Stopping...";
+        btn.disabled = true;
+      }
+    }
+
+    function navigateTo(view) {
+      toggleDrawer();
+      document.getElementById("view-library").classList.add("hidden");
+      document.getElementById("view-search").classList.add("hidden");
+      document.getElementById("nav-library").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 flex items-center gap-3";
+      document.getElementById("nav-search").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 flex items-center gap-3";
+
+      if (view === "library") {
+        document.getElementById("view-library").classList.remove("hidden");
+        document.getElementById("nav-library").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-purple-300 flex items-center gap-3";
+        document.getElementById("screenTitle").innerText = "My Library";
+      } else {
+        document.getElementById("view-search").classList.remove("hidden");
+        document.getElementById("nav-search").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-purple-300 flex items-center gap-3";
+        document.getElementById("screenTitle").innerText = "Creator Explorer";
+      }
+    }
+
+    function initTokenClient() {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: activeClientId,
+        scope: "https://www.googleapis.com/auth/youtube",
+        callback: (resp) => {
+          if (resp.error) {
+            document.getElementById("authGateStatus").innerText = "Error: " + resp.error;
+            return;
+          }
+          accessToken = resp.access_token;
+          const expiresInSec = resp.expires_in || 3500;
+          const expiryTimestamp = Date.now() + (expiresInSec * 1000);
+          localStorage.setItem("yt_access_token", accessToken);
+          localStorage.setItem("yt_token_expiry", expiryTimestamp.toString());
+
+          document.getElementById("authGateScreen").classList.add("hidden");
+          setStatus("Connected successfully!", false);
+          loadMyPlaylists(true);
+        },
+      });
+    }
+
+    function handleAuth() {
+      if (!window.google) {
+        document.getElementById("authGateStatus").innerText = "Google client library loading...";
+        return;
+      }
+      if (!tokenClient) initTokenClient();
+      tokenClient.requestAccessToken();
+    }
+
+    function disconnectAccount(showAlert = true) {
+      localStorage.removeItem("yt_access_token");
+      localStorage.removeItem("yt_token_expiry");
+      accessToken = null;
+      
+      const drawer = document.getElementById("sideDrawer");
+      if (!drawer.classList.contains("-translate-x-full")) {
+        toggleDrawer();
+      }
+
+      document.getElementById("authGateScreen").classList.remove("hidden");
+      document.getElementById("libraryPlaylistsContainer").innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400">Connect account to view playlists.</div>`;
+      setStatus("Logged out.", false);
+
+      if (showAlert) {
+        alert("Your YouTube authorization has expired. Please connect again.");
+      }
+    }
+
+    function getTrackedSources() {
+      try {
+        return JSON.parse(localStorage.getItem("yt_tracked_sources") || "{}");
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveTrackedSource(targetId, sourceInfo) {
+      const sources = getTrackedSources();
+      sources[targetId] = sourceInfo;
+      localStorage.setItem("yt_tracked_sources", JSON.stringify(sources));
+    }
+
+    // ================= VIEW 1: LIBRARY LOGIC =================
+    async function loadMyPlaylists(reset = false) {
+      if (!accessToken) return;
+      const refreshBtn = document.getElementById("refreshBtn");
+      refreshBtn.innerText = "⏳ Refreshing playlists...";
+      refreshBtn.disabled = true;
+      setStatus("Syncing playlists with YouTube...", true);
+
+      if (reset) {
+        libraryPlaylists = [];
+        selectedLibraryIds.clear();
+        nextLibraryPageToken = null;
+      }
+
+      try {
+        let url = "https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50";
+        if (nextLibraryPageToken) url += `&pageToken=${nextLibraryPageToken}`;
+
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+        
+        if (res.status === 401) {
+          disconnectAccount(true);
+          return;
+        }
+
+        if (res.status === 403) {
+          const errData = await res.json();
+          const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
+          if (reason === "quotaExceeded") {
+            alert("Daily YouTube API quota reached (10,000 units). You can enter a personal Client ID in the drawer to continue right away.");
+          } else {
+            alert(`YouTube access denied: ${errData.error?.message || reason}`);
+          }
+          setStatus("API Quota limit reached.", false);
+          return;
+        }
+
+        const data = await res.json();
+        nextLibraryPageToken = data.nextPageToken || null;
+
+        const fetched = (data.items || []).map(p => ({
+          id: p.id,
+          title: p.snippet.title,
+          description: p.snippet.description,
+          count: p.contentDetails?.itemCount || 0,
+          thumb: p.snippet.thumbnails?.medium?.url || p.snippet.thumbnails?.default?.url || ""
+        }));
+        libraryPlaylists = libraryPlaylists.concat(fetched);
+
+        renderLibraryPlaylists();
+
+        const loadMoreBtn = document.getElementById("loadMoreLibraryBtn");
+        nextLibraryPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+        setStatus(`Loaded ${libraryPlaylists.length} playlists from your library.`, false);
+      } catch (err) {
+        setStatus("Error loading library: " + err.message, false);
+      } finally {
+        refreshBtn.innerText = "Refresh";
+        refreshBtn.disabled = false;
+      }
+    }
+
+    function renderLibraryPlaylists() {
+      const container = document.getElementById("libraryPlaylistsContainer");
+      const localFilter = (document.getElementById("libraryLocalFilterInput")?.value || "").toLowerCase().trim();
+      const trackedSources = getTrackedSources();
+      container.innerHTML = "";
+      document.getElementById("librarySelectedCount").innerText = `${selectedLibraryIds.size} selected`;
+
+      const visiblePlaylists = localFilter 
+        ? libraryPlaylists.filter(p => p.title.toLowerCase().includes(localFilter))
+        : libraryPlaylists;
+
+      if (!visiblePlaylists.length) {
+        container.innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400">No playlists found.</div>`;
+        return;
+      }
+
+      visiblePlaylists.forEach(pl => {
+        const isChecked = selectedLibraryIds.has(pl.id);
+        const hasTrackedSource = !!trackedSources[pl.id];
+
+        const row = document.createElement("div");
+        row.className = `flex flex-col gap-2 p-3 rounded-xl border text-xs cursor-pointer transition ${
+          isChecked ? 'bg-purple-950/30 border-purple-600/70' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+        }`;
+        row.onclick = () => toggleLibrarySelection(pl.id);
+        
+        row.innerHTML = `
+          <div class="flex items-start gap-3">
+            <input type="checkbox" value="${pl.id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleLibrarySelection('${pl.id}')" class="mt-1 rounded border-slate-700 text-purple-600 w-4 h-4 shrink-0 cursor-pointer" />
+            <img src="${pl.thumb}" onclick="event.stopPropagation(); showPlaylistDetail('${pl.id}')" class="w-16 h-11 object-cover rounded-lg bg-slate-950 shrink-0 cursor-pointer hover:opacity-80 transition" />
+            <div class="flex-1 min-w-0" onclick="event.stopPropagation(); showPlaylistDetail('${pl.id}')">
+              <p class="font-bold text-slate-100 line-clamp-2 leading-snug">${pl.title}</p>
+              <p class="text-[11px] text-slate-400 mt-1">${pl.count} videos • Tap to preview</p>
+            </div>
+          </div>
+          ${hasTrackedSource ? `
+            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+              <span class="text-[10px] text-purple-400 font-medium flex items-center gap-1">
+                <span>🔗</span> Linked to Source
+              </span>
+              <button onclick="event.stopPropagation(); syncPlaylist('${pl.id}')" class="bg-purple-950 hover:bg-purple-900 text-purple-300 border border-purple-700/60 px-2.5 py-1 rounded-lg text-[11px] font-semibold active:scale-95 transition">
+                🔄 Check for New Videos
+              </button>
+            </div>
+          ` : ''}
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function showPlaylistDetail(id) {
+      const pl = libraryPlaylists.find(p => p.id === id);
+      if (!pl) return;
+      openPreviewSheet(pl.id, pl.title, `${pl.count} videos in playlist`, pl.thumb, pl.description, `https://www.youtube.com/playlist?list=${pl.id}`);
+    }
+
+    function toggleLibrarySelection(id) {
+      selectedLibraryIds.has(id) ? selectedLibraryIds.delete(id) : selectedLibraryIds.add(id);
+      renderLibraryPlaylists();
+    }
+
+    function toggleSelectAllLibrary() {
+      const allSelected = selectedLibraryIds.size === libraryPlaylists.length;
+      selectedLibraryIds.clear();
+      if (!allSelected) {
+        libraryPlaylists.forEach(pl => selectedLibraryIds.add(pl.id));
+      }
+      renderLibraryPlaylists();
+    }
+
+    async function combineLibraryPlaylists() {
+      if (selectedLibraryIds.size < 1) return alert("Select at least one playlist to combine.");
+      const title = document.getElementById("combinedTitleInput").value.trim();
+      if (!title) return alert("Please enter a title for your combined playlist.");
+      const sortOrder = document.getElementById("librarySortOrder").value;
+
+      const confirmAction = confirm(`Create "${title}" by combining ${selectedLibraryIds.size} playlist(s)?`);
+      if (!confirmAction) return;
+
+      document.getElementById("libraryCombineBtn").disabled = true;
+      try {
+        await executeBatchMerge([...selectedLibraryIds], title, sortOrder, "playlists");
+        selectedLibraryIds.clear();
+        document.getElementById("combinedTitleInput").value = "";
+        loadMyPlaylists(true);
+      } finally {
+        document.getElementById("libraryCombineBtn").disabled = false;
+      }
+    }
+
+    // ================= SMART DELTA SYNC ENGINE =================
+    async function syncPlaylist(targetPlaylistId) {
+      const trackedSources = getTrackedSources();
+      const sourceMeta = trackedSources[targetPlaylistId];
+      if (!sourceMeta) return alert("No source playlist tracked for this item.");
+
+      const progressModal = document.getElementById("progressModal");
+      const progressFill = document.getElementById("progressBarFill");
+      const progressTitle = document.getElementById("progressModalTitle");
+      const progressSubtitle = document.getElementById("progressModalSubtitle");
+      const progressCount = document.getElementById("progressCountLabel");
+      const stopBtn = document.getElementById("stopProcessBtn");
+
+      isMergeCancelled = false;
+      stopBtn.innerText = "🛑 Stop Process";
+      stopBtn.disabled = false;
+
+      progressModal.classList.remove("hidden");
+      progressFill.style.width = "0%";
+      progressTitle.innerText = "Checking Source for New Videos...";
+      progressSubtitle.innerText = "Reading source uploads and comparing...";
+
+      try {
+        const existingVideoIds = new Set();
+        let token = "";
+        do {
+          if (isMergeCancelled) break;
+          let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${targetPlaylistId}&maxResults=50`;
+          if (token) url += `&pageToken=${token}`;
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+          const data = await res.json();
+          (data.items || []).forEach(item => {
+            if (item.contentDetails?.videoId) existingVideoIds.add(item.contentDetails.videoId);
+          });
+          token = data.nextPageToken;
+        } while (token);
+
+        if (isMergeCancelled) {
+          progressModal.classList.add("hidden");
+          return;
+        }
+
+        let sourceVideos = [];
+        const sourceIds = Array.isArray(sourceMeta.sourceIds) ? sourceMeta.sourceIds : [sourceMeta.sourceIds];
+
+        for (const sId of sourceIds) {
+          if (isMergeCancelled) break;
+          let sToken = "";
+          do {
+            if (isMergeCancelled) break;
+            let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${sId}&maxResults=50`;
+            if (sToken) url += `&pageToken=${sToken}`;
+            const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+            const data = await res.json();
+            for (const item of (data.items || [])) {
+              const vId = item.contentDetails?.videoId || item.snippet?.resourceId?.videoId;
+              if (!vId) continue;
+              const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
+              sourceVideos.push({ id: vId, publishedAt: rawDate ? new Date(rawDate).getTime() : 0 });
+            }
+            sToken = data.nextPageToken;
+          } while (sToken);
+        }
+
+        const newVideos = sourceVideos.filter(v => !existingVideoIds.has(v.id));
+        const uniqueMap = new Map();
+        newVideos.forEach(v => { if (!uniqueMap.has(v.id)) uniqueMap.set(v.id, v); });
+        let finalNewVideos = Array.from(uniqueMap.values());
+
+        if (finalNewVideos.length === 0) {
+          progressModal.classList.add("hidden");
+          alert("Your playlist is completely up-to-date! No new uploads found.");
+          return;
+        }
+
+        finalNewVideos.sort((a, b) => a.publishedAt - b.publishedAt);
+        const estCost = finalNewVideos.length * 50;
+        const confirmSync = confirm(`Found ${finalNewVideos.length} new video(s)! Appending them uses ~${estCost} API quota units (instead of regenerating from scratch).\n\nProceed?`);
+        if (!confirmSync) {
+          progressModal.classList.add("hidden");
+          return;
+        }
+
+        progressTitle.innerText = "Appending New Episodes...";
+        let inserted = 0;
+        const total = finalNewVideos.length;
+
+        for (const item of finalNewVideos) {
+          if (isMergeCancelled) break;
+          const ok = await insertVideoToPlaylist(targetPlaylistId, item.id);
+          if (ok) inserted++;
+          const pct = Math.round((inserted / total) * 100);
+          progressFill.style.width = `${pct}%`;
+          progressSubtitle.innerText = `Appending new video (${pct}%)...`;
+          progressCount.innerText = `${inserted} of ${total} new videos added`;
+        }
+
+        progressModal.classList.add("hidden");
+        alert(isMergeCancelled ? `Sync stopped. Appended ${inserted} new episodes.` : `Sync complete! Added ${inserted} new episodes to your playlist.`);
+        loadMyPlaylists(true);
+
+      } catch (err) {
+        progressModal.classList.add("hidden");
+        alert("Sync error: " + err.message);
+      }
+    }
+
+    // ================= VIEW 2: CREATOR EXPLORER LOGIC =================
+    async function executeCreatorSearch() {
+      const rawInput = document.getElementById("searchCreatorInput").value.trim();
+      if (!rawInput) return alert("Please enter a creator name or handle.");
+
+      setStatus(`Finding creator "${rawInput}"...`, true);
+      try {
+        let channelId = null;
+        const cleanName = rawInput.replace(/^@/, '');
+
+        const handleRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forHandle=${encodeURIComponent(cleanName)}`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (handleRes.status === 401) {
+          disconnectAccount(true);
+          return;
+        }
+        if (handleRes.status === 403) {
+          alert("YouTube API daily quota reached.");
+          return;
+        }
+
+        const handleData = await handleRes.json();
+        if (handleData.items && handleData.items.length > 0) {
+          currentCreatorData = handleData.items[0];
+          channelId = currentCreatorData.id;
+        } else {
+          const chRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(rawInput)}&maxResults=1`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+
+          if (chRes.status === 401) {
+            disconnectAccount(true);
+            return;
+          }
+          if (chRes.status === 403) {
+            alert("YouTube API daily quota reached.");
+            return;
+          }
+
+          const chData = await chRes.json();
+          if (!chData.items || chData.items.length === 0) {
+            return setStatus(`No YouTube channel found matching "${rawInput}".`, false);
+          }
+          channelId = chData.items[0].id?.channelId || chData.items[0].snippet?.channelId;
+          
+          const detailsRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${channelId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+
+          if (detailsRes.status === 401) {
+            disconnectAccount(true);
+            return;
+          }
+
+          const details = await detailsRes.json();
+          if (!details.items || details.items.length === 0) {
+            return setStatus("Creator details could not be retrieved.", false);
+          }
+          currentCreatorData = details.items[0];
+        }
+
+        totalCreatorVideosCount = parseInt(currentCreatorData.statistics?.videoCount || 0, 10);
+        document.getElementById("creatorTitle").innerText = currentCreatorData.snippet.title;
+        document.getElementById("creatorAvatar").src = currentCreatorData.snippet.thumbnails?.default?.url || "";
+        document.getElementById("creatorStats").innerText = `${Number(currentCreatorData.statistics?.subscriberCount || 0).toLocaleString()} subscribers • ${totalCreatorVideosCount.toLocaleString()} total videos`;
+        document.getElementById("creatorResultsArea").classList.remove("hidden");
+
+        selectedCreatorItemIds.clear();
+        updateCreatorSelectedBadge();
+
+        // Reset active inspected playlist
+        activeInspectedPlaylist = null;
+        document.getElementById("videoSourceBanner").classList.add("hidden");
+
+        // Clear both data arrays & page tokens so results never accumulate
+        creatorPlaylists = [];
+        nextCreatorPlaylistsPageToken = null;
+        creatorVideos = [];
+        nextCreatorVideosPageToken = null;
+
+        if (creatorMode === "playlists") {
+          resetAndLoadCreatorPlaylists();
+        } else {
+          resetAndLoadCreatorVideos();
+        }
+      } catch (err) {
+        setStatus("Search error: " + err.message, false);
+      }
+    }
+
+    function setCreatorMode(mode) {
+      creatorMode = mode;
+      selectedCreatorItemIds.clear();
+      updateCreatorSelectedBadge();
+
+      if (mode === "playlists") {
+        document.getElementById("mode-playlists").className = "py-2 rounded-lg text-xs font-bold bg-purple-600 text-white";
+        document.getElementById("mode-videos").className = "py-2 rounded-lg text-xs font-bold text-slate-400";
+        resetAndLoadCreatorPlaylists();
+      } else {
+        document.getElementById("mode-videos").className = "py-2 rounded-lg text-xs font-bold bg-purple-600 text-white";
+        document.getElementById("mode-playlists").className = "py-2 rounded-lg text-xs font-bold text-slate-400";
+
+        // Reset videos and page token so old results never stack
+        creatorVideos = [];
+        nextCreatorVideosPageToken = null;
+
+        const keyword = document.getElementById("searchKeywordInput").value.trim().toLowerCase();
+        if (!activeInspectedPlaylist && keyword && creatorPlaylists.length > 0) {
+          const match = creatorPlaylists.find(p => p.snippet.title.toLowerCase().includes(keyword));
+          if (match) {
+            inspectPlaylistVideos(match.id, match.snippet.title);
+            return;
+          }
+        }
+
+        resetAndLoadCreatorVideos();
+      }
+    }
+
+    function inspectPlaylistVideos(playlistId, playlistTitle) {
+      activeInspectedPlaylist = { id: playlistId, title: playlistTitle };
+      creatorMode = "videos";
+      
+      document.getElementById("mode-videos").className = "py-2 rounded-lg text-xs font-bold bg-purple-600 text-white";
+      document.getElementById("mode-playlists").className = "py-2 rounded-lg text-xs font-bold text-slate-400";
+
+      document.getElementById("videoSourceTitle").innerText = playlistTitle;
+      document.getElementById("videoSourceBanner").classList.remove("hidden");
+
+      selectedCreatorItemIds.clear();
+      updateCreatorSelectedBadge();
+      resetAndLoadCreatorVideos();
+    }
+
+    function resetVideoSourceToUploads() {
+      activeInspectedPlaylist = null;
+      document.getElementById("videoSourceBanner").classList.add("hidden");
+      resetAndLoadCreatorVideos();
+    }
+
+    function resetAndLoadCreatorPlaylists() {
+      creatorPlaylists = [];
+      nextCreatorPlaylistsPageToken = null;
+      selectedCreatorItemIds.clear();
+      updateCreatorSelectedBadge();
+      document.getElementById("creatorItemsList").innerHTML = "";
+      fetchNextCreatorBatch();
+    }
+
+    function resetAndLoadCreatorVideos() {
+      creatorVideos = [];
+      nextCreatorVideosPageToken = null;
+      selectedCreatorItemIds.clear();
+      updateCreatorSelectedBadge();
+      document.getElementById("creatorItemsList").innerHTML = "";
+      fetchNextCreatorBatch();
+    }
+
+    async function fetchNextCreatorBatch() {
+      const keyword = document.getElementById("searchKeywordInput").value.trim();
+      const loadMoreBtn = document.getElementById("loadMoreCreatorBtn");
+
+      if (creatorMode === "playlists") {
+        setStatus(`Loading creator playlists...`, true);
+        let url = `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${currentCreatorData.id}&maxResults=50`;
+        if (nextCreatorPlaylistsPageToken) url += `&pageToken=${nextCreatorPlaylistsPageToken}`;
+
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (res.status === 401) {
+          disconnectAccount(true);
+          return;
+        }
+        if (res.status === 403) {
+          alert("YouTube API daily quota limit reached.");
+          return;
+        }
+
+        const data = await res.json();
+        nextCreatorPlaylistsPageToken = data.nextPageToken || null;
+
+        const items = (data.items || []).filter(p => !keyword || p.snippet.title.toLowerCase().includes(keyword.toLowerCase()));
+        creatorPlaylists = creatorPlaylists.concat(items);
+        renderCreatorList();
+
+        nextCreatorPlaylistsPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+        loadMoreBtn.innerText = "⬇️ Load More Playlists (Next 50)";
+        setStatus(`Loaded ${creatorPlaylists.length} playlists.`, false);
+      } else {
+        if (activeInspectedPlaylist) {
+          setStatus(`Loading episodes from "${activeInspectedPlaylist.title}"...`, true);
+          let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${activeInspectedPlaylist.id}&maxResults=50`;
+          if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
+
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+          if (res.status === 401) { disconnectAccount(true); return; }
+          if (res.status === 403) { alert("YouTube API daily quota limit reached."); return; }
+
+          const data = await res.json();
+          nextCreatorVideosPageToken = data.nextPageToken || null;
+
+          creatorVideos = creatorVideos.concat(data.items || []);
+          renderCreatorList();
+
+          nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+          loadMoreBtn.innerText = "⬇️ Load More Episodes (Next 50)";
+          setStatus(`Loaded ${creatorVideos.length} videos from "${activeInspectedPlaylist.title}".`, false);
+
+        } else if (keyword) {
+          setStatus(`Searching all ${totalCreatorVideosCount} videos for "${keyword}"...`, true);
+          let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${currentCreatorData.id}&q=${encodeURIComponent(keyword)}&type=video&maxResults=50`;
+          if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
+
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+          if (res.status === 401) { disconnectAccount(true); return; }
+          if (res.status === 403) { alert("YouTube API daily quota limit reached."); return; }
+
+          const data = await res.json();
+          nextCreatorVideosPageToken = data.nextPageToken || null;
+
+          const transformed = (data.items || []).map(item => ({
+            id: item.id.videoId,
+            snippet: item.snippet,
+            contentDetails: { videoId: item.id.videoId, videoPublishedAt: item.snippet.publishedAt }
+          }));
+
+          creatorVideos = creatorVideos.concat(transformed);
+          renderCreatorList();
+
+          nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+          loadMoreBtn.innerText = "⬇️ Load More Matching Videos";
+          setStatus(`Found ${creatorVideos.length} videos matching "${keyword}".`, false);
+
+        } else {
+          setStatus(`Loading recent uploads...`, true);
+          const uploadsId = currentCreatorData.contentDetails?.relatedPlaylists?.uploads;
+          if (!uploadsId) return setStatus("Could not retrieve channel uploads feed.", false);
+
+          let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=50`;
+          if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
+
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+          if (res.status === 401) { disconnectAccount(true); return; }
+          if (res.status === 403) { alert("YouTube API daily quota limit reached."); return; }
+
+          const data = await res.json();
+          nextCreatorVideosPageToken = data.nextPageToken || null;
+
+          creatorVideos = creatorVideos.concat(data.items || []);
+          renderCreatorList();
+
+          nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+          loadMoreBtn.innerText = "⬇️ Load More Videos (Next 50)";
+          setStatus(`Displaying ${creatorVideos.length} of ${totalCreatorVideosCount.toLocaleString()} uploads.`, false);
+        }
+      }
+    }
+
+    function renderCreatorList() {
+      const list = document.getElementById("creatorItemsList");
+      const localFilter = (document.getElementById("creatorLocalFilterInput")?.value || "").toLowerCase().trim();
+      list.innerHTML = "";
+      const isPlMode = creatorMode === "playlists";
+      const sourceItems = isPlMode ? creatorPlaylists : creatorVideos;
+
+      const visibleItems = localFilter 
+        ? sourceItems.filter(item => item.snippet.title.toLowerCase().includes(localFilter))
+        : sourceItems;
+
+      if (isPlMode) {
+        document.getElementById("contentCountLabel").innerText = `${creatorPlaylists.length} playlists loaded`;
+      } else {
+        const totalNote = activeInspectedPlaylist ? `${creatorVideos.length} episodes loaded` : `${creatorVideos.length} videos loaded`;
+        document.getElementById("contentCountLabel").innerText = totalNote;
+      }
+
+      if (!visibleItems.length) {
+        list.innerHTML = `<div class="p-3 text-center text-xs text-slate-500">No matching items found.</div>`;
+        return;
+      }
+
+      visibleItems.forEach(item => {
+        const id = isPlMode ? item.id : (item.snippet?.resourceId?.videoId || item.contentDetails?.videoId || item.id);
+        if (!id) return;
+
+        const title = item.snippet?.title || "Untitled";
+        const thumb = item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || "";
+        const subtitle = isPlMode ? `${item.contentDetails?.itemCount || 0} videos` : "Single Video";
+        const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
+        const publishedDate = rawDate ? new Date(rawDate).toLocaleDateString() : "";
+        const isChecked = selectedCreatorItemIds.has(id);
+
+        const row = document.createElement("div");
+        row.className = `flex flex-col gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
+          isChecked ? 'bg-purple-950/30 border-purple-600/70' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+        }`;
+        row.onclick = () => toggleCreatorItem(id);
+
+        row.innerHTML = `
+          <div class="flex items-start gap-3">
+            <input type="checkbox" value="${id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleCreatorItem('${id}')" class="mt-1 rounded border-slate-700 text-purple-600 w-4 h-4 shrink-0 cursor-pointer" />
+            <img src="${thumb}" onclick="event.stopPropagation(); showCreatorItemDetail('${id}')" class="w-16 h-11 object-cover rounded-lg bg-slate-900 shrink-0 cursor-pointer hover:opacity-80 transition" />
+            <div class="flex-1 min-w-0" onclick="event.stopPropagation(); showCreatorItemDetail('${id}')">
+              <span class="font-bold text-slate-100 block line-clamp-2 leading-snug">${title}</span>
+              <span class="text-[11px] text-slate-500 mt-1 block">${subtitle} ${publishedDate ? '• ' + publishedDate : ''}</span>
+            </div>
+          </div>
+          ${isPlMode ? `
+            <div class="pt-1.5 border-t border-slate-900 flex justify-end">
+              <button onclick="event.stopPropagation(); inspectPlaylistVideos('${item.id}', '${item.snippet.title.replace(/'/g, "\\'")}')" class="bg-purple-950 hover:bg-purple-900 text-purple-300 border border-purple-800/60 px-2 py-1 rounded-md text-[10px] font-bold active:scale-95 transition flex items-center gap-1">
+                <span>🔍 Inspect Videos</span>
+                <span>➔</span>
+              </button>
+            </div>
+          ` : ''}
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function showCreatorItemDetail(id) {
+      const isPlMode = creatorMode === "playlists";
+      if (isPlMode) {
+        const pl = creatorPlaylists.find(p => p.id === id);
+        if (!pl) return;
+        openPreviewSheet(pl.id, pl.snippet.title, `${pl.contentDetails?.itemCount || 0} videos • ${currentCreatorData?.snippet?.title || ''}`, pl.snippet.thumbnails?.medium?.url || pl.snippet.thumbnails?.default?.url || "", pl.snippet.description, `https://www.youtube.com/playlist?list=${pl.id}`);
+      } else {
+        const vid = creatorVideos.find(v => (v.snippet?.resourceId?.videoId === id || v.contentDetails?.videoId === id || v.id === id));
+        if (!vid) return;
+        const rawDate = vid.contentDetails?.videoPublishedAt || vid.snippet?.publishedAt || "";
+        const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : "";
+        openPreviewSheet(id, vid.snippet.title, `${currentCreatorData?.snippet?.title || ''} • ${dateStr}`, vid.snippet.thumbnails?.medium?.url || vid.snippet.thumbnails?.default?.url || "", vid.snippet.description, `https://www.youtube.com/watch?v=${id}`);
+      }
+    }
+
+    function toggleCreatorItem(id) {
+      selectedCreatorItemIds.has(id) ? selectedCreatorItemIds.delete(id) : selectedCreatorItemIds.add(id);
+      updateCreatorSelectedBadge();
+      renderCreatorList();
+    }
+
+    function updateCreatorSelectedBadge() {
+      const count = selectedCreatorItemIds.size;
+      document.getElementById("creatorSelectedBadge").innerText = `${count} selected`;
+
+      if (creatorMode === "videos") {
+        const estUnits = count > 0 ? (50 + (count * 50)).toLocaleString() : 0;
+        document.getElementById("quotaUnitEstimate").innerText = `~${estUnits} units (${count} videos)`;
+        
+        const bar = document.getElementById("quotaEstimatorBar");
+        if (count > 50) {
+          bar.className = "p-2 bg-amber-950/40 rounded-lg border border-amber-800/80 text-[11px] flex items-center justify-between";
+          document.getElementById("quotaUnitEstimate").className = "font-mono text-amber-300 font-semibold";
+        } else {
+          bar.className = "p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px] flex items-center justify-between";
+          document.getElementById("quotaUnitEstimate").className = "font-mono text-purple-300 font-semibold";
+        }
+      } else {
+        document.getElementById("quotaUnitEstimate").innerText = `Calculated on merge (${count} playlists)`;
+      }
+    }
+
+    function toggleSelectAllCreatorItems() {
+      const isPlMode = creatorMode === "playlists";
+      const items = isPlMode ? creatorPlaylists : creatorVideos;
+      const allSelected = selectedCreatorItemIds.size === items.length;
+      selectedCreatorItemIds.clear();
+      if (!allSelected) {
+        items.forEach(item => {
+          const id = isPlMode ? item.id : (item.snippet?.resourceId?.videoId || item.contentDetails?.videoId || item.id);
+          if (id) selectedCreatorItemIds.add(id);
+        });
+      }
+      renderCreatorList();
+      updateCreatorSelectedBadge();
+    }
+
+    async function saveCreatorSelectionToPlaylist() {
+      if (selectedCreatorItemIds.size < 1) return alert("Select at least one item.");
+      const title = document.getElementById("creatorNewPlaylistTitle").value.trim();
+      if (!title) return alert("Please enter a title for your new playlist.");
+      const sortOrder = document.getElementById("creatorSortOrder").value;
+
+      document.getElementById("creatorCreateBtn").disabled = true;
+      try {
+        await executeBatchMerge([...selectedCreatorItemIds], title, sortOrder, creatorMode);
+        selectedCreatorItemIds.clear();
+        updateCreatorSelectedBadge();
+        document.getElementById("creatorNewPlaylistTitle").value = "";
+        renderCreatorList();
+        loadMyPlaylists(true);
+      } finally {
+        document.getElementById("creatorCreateBtn").disabled = false;
+      }
+    }
+
+    // ================= UNIFIED SORTING & AUTO-CHUNKING CREATION ENGINE =================
+    async function executeBatchMerge(selectedIds, newTitle, sortOrder, sourceType) {
+      const progressModal = document.getElementById("progressModal");
+      const progressFill = document.getElementById("progressBarFill");
+      const progressTitle = document.getElementById("progressModalTitle");
+      const progressSubtitle = document.getElementById("progressModalSubtitle");
+      const progressCount = document.getElementById("progressCountLabel");
+      const stopBtn = document.getElementById("stopProcessBtn");
+
+      isMergeCancelled = false;
+      stopBtn.innerText = "🛑 Stop Process";
+      stopBtn.disabled = false;
+
+      progressModal.classList.remove("hidden");
+      progressFill.style.width = "0%";
+      progressTitle.innerText = `Collecting Videos...`;
+      progressSubtitle.innerText = `Gathering video information and timestamps...`;
+
+      let videoObjects = [];
+
+      // Step 1: Ingest Video Metadata
+      if (sourceType === "playlists") {
+        for (const plId of selectedIds) {
+          if (isMergeCancelled) break;
+          let token = "";
+          do {
+            if (isMergeCancelled) break;
+            let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${plId}&maxResults=50`;
+            if (token) url += `&pageToken=${token}`;
+            const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+            
+            if (res.status === 401) {
+              progressModal.classList.add("hidden");
+              disconnectAccount(true);
+              return;
+            }
+            if (res.status === 403) {
+              progressModal.classList.add("hidden");
+              alert("YouTube API daily quota limit reached.");
+              return;
+            }
+
+            const data = await res.json();
+            for (const item of (data.items || [])) {
+              const vId = item.contentDetails?.videoId || item.snippet?.resourceId?.videoId;
+              if (!vId) continue;
+              const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
+              const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
+              videoObjects.push({ id: vId, publishedAt: timestamp });
+            }
+            token = data.nextPageToken;
+          } while (token);
+        }
+      } else {
+        selectedIds.forEach(id => {
+          const v = creatorVideos.find(item => (item.snippet?.resourceId?.videoId === id || item.contentDetails?.videoId === id || item.id === id));
+          const rawDate = v?.contentDetails?.videoPublishedAt || v?.snippet?.publishedAt || "";
+          const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
+          videoObjects.push({ id: id, publishedAt: timestamp });
+        });
+      }
+
+      if (isMergeCancelled) {
+        progressModal.classList.add("hidden");
+        setStatus("Process stopped before playlist creation.", false);
+        return;
+      }
+
+      if (videoObjects.length === 0) {
+        progressModal.classList.add("hidden");
+        alert("No valid videos could be retrieved from your selection.");
+        return;
+      }
+
+      // Step 2: Auto-Deduplication
+      const uniqueMap = new Map();
+      videoObjects.forEach(vo => {
+        if (!uniqueMap.has(vo.id)) uniqueMap.set(vo.id, vo);
+      });
+      let finalVideos = Array.from(uniqueMap.values());
+
+      // Step 3: Chronological Sorting
+      if (sortOrder === "oldest_first") {
+        finalVideos.sort((a, b) => a.publishedAt - b.publishedAt);
+      } else if (sortOrder === "newest_first") {
+        finalVideos.sort((a, b) => b.publishedAt - a.publishedAt);
+      }
+
+      // Step 4: Smart Automatic Chunking Check (50 items max per batch)
+      const CHUNK_SIZE = 50;
+      let chunks = [];
+
+      if (finalVideos.length > CHUNK_SIZE) {
+        const numParts = Math.ceil(finalVideos.length / CHUNK_SIZE);
+        const autoSplit = confirm(`You selected ${finalVideos.length} videos. To stay strictly within YouTube's daily API limits and prevent failures, Playlist Studio can automatically split this into ${numParts} chronological parts (Part 1, Part 2, etc.).\n\nClick OK to split automatically, or Cancel to abort.`);
+        if (!autoSplit) {
+          progressModal.classList.add("hidden");
+          return;
+        }
+
+        for (let i = 0; i < finalVideos.length; i += CHUNK_SIZE) {
+          chunks.push({
+            partNum: Math.floor(i / CHUNK_SIZE) + 1,
+            videos: finalVideos.slice(i, i + CHUNK_SIZE)
+          });
+        }
+      } else {
+        chunks.push({ partNum: 0, videos: finalVideos });
+      }
+
+      // Step 5: Sequentially Create Playlists & Insert Videos
+      let createdPlaylists = [];
+      let totalInsertedOverall = 0;
+
+      for (const chunk of chunks) {
+        if (isMergeCancelled) break;
+
+        const partTitle = chunk.partNum > 0 ? `${newTitle} (Part ${chunk.partNum})` : newTitle;
+        progressTitle.innerText = `Creating "${partTitle}"`;
+        progressSubtitle.innerText = `Registering playlist with YouTube...`;
+
+        const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            snippet: { title: partTitle, description: "Compiled with chronological sorting via Playlist Studio." },
+            status: { privacyStatus: "private" }
+          })
+        });
+
+        if (!createRes.ok) {
+          const errInfo = await createRes.json();
+          alert(`YouTube API Error: ${errInfo.error?.message || "Failed to create playlist"}`);
+          break;
+        }
+
+        const createdData = await createRes.json();
+        const targetId = createdData.id;
+        createdPlaylists.push({ title: partTitle, id: targetId, count: chunk.videos.length });
+
+        // Save Delta Sync tracking link
+        if (sourceType === "playlists") {
+          saveTrackedSource(targetId, { type: "playlists", sourceIds: selectedIds, title: newTitle });
+        } else if (activeInspectedPlaylist) {
+          saveTrackedSource(targetId, { type: "playlists", sourceIds: [activeInspectedPlaylist.id], title: newTitle });
+        } else if (currentCreatorData?.contentDetails?.relatedPlaylists?.uploads) {
+          saveTrackedSource(targetId, { type: "channel_uploads", sourceIds: [currentCreatorData.contentDetails.relatedPlaylists.uploads], title: newTitle });
+        }
+
+        let insertedInChunk = 0;
+        for (const item of chunk.videos) {
+          if (isMergeCancelled) break;
+
+          const success = await insertVideoToPlaylist(targetId, item.id);
+          if (success) {
+            insertedInChunk++;
+            totalInsertedOverall++;
+          }
+
+          const pct = Math.round((totalInsertedOverall / finalVideos.length) * 100);
+          progressFill.style.width = `${pct}%`;
+          progressSubtitle.innerText = `Adding to ${partTitle} (${pct}%)...`;
+          progressCount.innerText = `${totalInsertedOverall} of ${finalVideos.length} total videos added`;
+        }
+      }
+
+      progressModal.classList.add("hidden");
+
+      // Step 6: Render Success Modal with Direct Links to Each Part
+      const linksContainer = document.getElementById("successLinksContainer");
+      linksContainer.innerHTML = "";
+
+      document.getElementById("successModalHeading").innerText = isMergeCancelled ? "Process Stopped" : "Playlists Ready!";
+      document.getElementById("successModalDetail").innerText = isMergeCancelled 
+        ? `Stopped early. Added ${totalInsertedOverall} videos across created collections.`
+        : `Successfully compiled ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s) in chronological order.`;
+
+      createdPlaylists.forEach(pl => {
+        const link = document.createElement("a");
+        link.href = `https://www.youtube.com/playlist?list=${pl.id}`;
+        link.target = "_blank";
+        link.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between shadow-md transition";
+        link.innerHTML = `<span>▶ ${pl.title}</span><span class="text-[10px] opacity-80">${pl.count} vids</span>`;
+        linksContainer.appendChild(link);
+      });
+
+      document.getElementById("successModal").classList.remove("hidden");
+    }
+
+    async function insertVideoToPlaylist(playlistId, videoId) {
+      try {
+        const res = await fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            snippet: { playlistId: playlistId, resourceId: { kind: "youtube#video", videoId: videoId } }
+          })
+        });
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1518,6 +1518,70 @@
         return false;
       }
     }
+    // ================= SEQUENCE STUDIO TOOLS =================
+    function sortCreatorItemsChrono(ascending = true) {
+      const list = creatorMode === "playlists" ? creatorPlaylists : creatorVideos;
+      if (list.length < 2) return;
+
+      list.sort((a, b) => {
+        const rawDateA = a.contentDetails?.videoPublishedAt || a.snippet?.publishedAt || "";
+        const rawDateB = b.contentDetails?.videoPublishedAt || b.snippet?.publishedAt || "";
+        const timeA = rawDateA ? new Date(rawDateA).getTime() : 0;
+        const timeB = rawDateB ? new Date(rawDateB).getTime() : 0;
+        return ascending ? timeA - timeB : timeB - timeA;
+      });
+
+      renderCreatorList();
+      setStatus(`Sorted ${list.length} items ${ascending ? 'Oldest to Newest' : 'Newest to Oldest'}.`, false);
+    }
+
+    function invertCreatorOrder() {
+      const list = creatorMode === "playlists" ? creatorPlaylists : creatorVideos;
+      if (list.length < 2) return;
+      list.reverse();
+      renderCreatorList();
+      setStatus("Inverted list order.", false);
+    }
+
+    function shuffleCreatorOrder() {
+      const list = creatorMode === "playlists" ? creatorPlaylists : creatorVideos;
+      if (list.length < 2) return;
+      for (let i = list.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      renderCreatorList();
+      setStatus("Randomly shuffled sequence.", false);
+    }
+
+    function excludeVideosByKeyword() {
+      const input = document.getElementById("keywordExclusionInput");
+      const term = input.value.trim().toLowerCase();
+      if (!term) return alert("Enter a keyword (e.g. #shorts, trailer) to filter out.");
+
+      const isPlMode = creatorMode === "playlists";
+      const initialCount = isPlMode ? creatorPlaylists.length : creatorVideos.length;
+
+      if (isPlMode) {
+        creatorPlaylists = creatorPlaylists.filter(p => !p.snippet.title.toLowerCase().includes(term));
+      } else {
+        creatorVideos = creatorVideos.filter(v => !v.snippet.title.toLowerCase().includes(term));
+      }
+
+      selectedCreatorItemIds.forEach(id => {
+        const exists = isPlMode 
+          ? creatorPlaylists.some(p => p.id === id)
+          : creatorVideos.some(v => (v.snippet?.resourceId?.videoId === id || v.contentDetails?.videoId === id || v.id === id));
+        if (!exists) selectedCreatorItemIds.delete(id);
+      });
+
+      const removed = initialCount - (isPlMode ? creatorPlaylists.length : creatorVideos.length);
+      input.value = "";
+      renderCreatorList();
+      updateCreatorSelectedBadge();
+      alert(`Stripped ${removed} item(s) matching "${term}".`);
+    }
+    
   </script>
 </body>
 </html>

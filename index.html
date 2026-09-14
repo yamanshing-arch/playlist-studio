@@ -372,6 +372,35 @@
           <div class="relative">
             <input id="creatorLocalFilterInput" oninput="renderCreatorList()" type="text" placeholder="🔎 Filter loaded results on screen..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-purple-500 placeholder:text-slate-500" />
           </div>
+          <!-- SMART SEQUENCE SHAPING TOOLBAR -->
+          <div class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-1 flex-wrap">
+              <button onclick="sortCreatorItemsChrono(true)" title="Oldest to Newest" class="text-[11px] bg-slate-900 hover:bg-slate-800 border border-slate-700/60 px-2 py-1 rounded text-purple-300 font-semibold active:scale-95 transition">
+                📅 1-9 Oldest
+              </button>
+              <button onclick="sortCreatorItemsChrono(false)" title="Newest to Oldest" class="text-[11px] bg-slate-900 hover:bg-slate-800 border border-slate-700/60 px-2 py-1 rounded text-purple-300 font-semibold active:scale-95 transition">
+                ⚡ 9-1 Newest
+              </button>
+              <button onclick="invertCreatorOrder()" title="Reverse Current Order" class="text-[11px] bg-slate-900 hover:bg-slate-800 border border-slate-700/60 px-2 py-1 rounded text-cyan-300 font-semibold active:scale-95 transition">
+                ⇅ Invert
+              </button>
+              <button onclick="shuffleCreatorOrder()" title="True Random Shuffle" class="text-[11px] bg-slate-900 hover:bg-slate-800 border border-slate-700/60 px-2 py-1 rounded text-amber-300 font-semibold active:scale-95 transition">
+                🔀 Shuffle
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1 w-full sm:w-auto">
+              <input 
+                id="keywordExclusionInput" 
+                type="text" 
+                placeholder="Exclude (e.g. #shorts)..." 
+                class="flex-1 sm:w-36 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-[11px] focus:outline-none focus:border-rose-500 placeholder:text-slate-600"
+              />
+              <button onclick="excludeVideosByKeyword()" class="bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-[11px] font-bold px-2 py-1 rounded-lg transition active:scale-95">
+                Strip
+              </button>
+            </div>
+          </div>
 
           <div id="creatorItemsList" class="max-h-80 overflow-y-auto space-y-2 pr-1"></div>
 

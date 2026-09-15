@@ -1635,10 +1635,185 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
               <span class="font-bold text-slate-100 block line-clamp-2 leading-snug">${title}</span>
               <span class="text-[11px] text-slate-500 mt-1 block">${subtitle} ${publishedDate ? '• ' + publishedDate : ''}</span>
             </div>
-          </div>
-          ${isPlMode ? `
-            <div class="pt-1.5 border-t border-slate-900 flex justify-end">
-              <button onclick="event.stopPropagation(); inspectPlaylistVideos('${item.id}', '${item.snippet.title.replace(/'/g, "\\'")}')" class="bg-purple-950 hover:bg-purple-900 text-purple-300 border border-purple-800/60 px-2 py-1 rounded-md text-[10px] font-bold active:scale-95 transition flex items-center gap-1">
+                    ${isPlMode ? `
+              <div class="pt-1.5 border-t border-slate-800 flex items-center justify-end gap-2">
+                <button type="button" 
+                  onclick="event.stopPropagation(); scanAndMergeCollabPlaylist('${item.id}', '${(item.snippet?.title || '').replace(/'/g, "\\'")}')" 
+                  class="bg-purple-950/60 hover:bg-purple-900 text-purple-300 border border-purple-800/60 px-2 py-1 rounded-md text-[11px] font-bold active:scale-95 transition flex items-center gap-1 shadow-sm">
+                  <span>✨ Collab Multi-POV</span>
+                </button>
+                <button type="button" 
+                  onclick="event.stopPropagation(); inspectPlaylistVideos('${item.id}', '${(item.snippet?.title || '').replace(/'/g, "\\'")}')" 
+                  class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2 py-1 rounded-md text-[11px] font-semibold active:scale-95 transition flex items-center gap-1">
+                  <span>🔍 Inspect</span>
+                </button>
+              </div>
+            ` : ''}
+          `;
+          list.appendChild(row);
+        });
+      }
+
+  async function scanAndMergeCollabPlaylist(sourcePlaylistId, playlistTitle) {
+  const token = gapi?.client?.getToken?.()?.access_token || tokenClient?.access_token || "";
+  if (!token) {
+    alert("Please sign in with your YouTube account first.");
+    return;
+  }
+
+  setStatus("Scanning playlist for collaborator POVs...", true);
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=20&playlistId=${sourcePlaylistId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const items = data.items || [];
+    if (items.length === 0) throw new Error("No videos found in this playlist.");
+
+    const combinedDesc = items.map(it => it.snippet?.description || "").join(" ");
+    const playlistMatches = Array.from(new Set(
+      (combinedDesc.match(/[?&]list=([a-zA-Z0-9_-]+)/gi) || [])
+        .map(m => m.replace(/[?&]list=/, ""))
+        .filter(id => id !== sourcePlaylistId)
+    ));
+
+    const discoveredPlaylists = [{ id: sourcePlaylistId, title: playlistTitle || "Primary POV" }];
+
+    for (const plId of playlistMatches) {
+      try {
+        const plRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${plId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const plData = await plRes.json();
+        if (plData.items && plData.items.length > 0) {
+          discoveredPlaylists.push({
+            id: plId,
+            title: plData.items[0].snippet.title,
+            channelTitle: plData.items[0].snippet.channelTitle
+          });
+        }
+      } catch (e) {
+        console.warn("Collab playlist fetch skipped:", plId);
+      }
+    }
+
+    if (discoveredPlaylists.length <= 1) {
+      alert("No collaborator series playlists found linked in the video descriptions of this playlist.");
+      setStatus("No linked collaborator playlists found.", false);
+      return;
+    }
+
+    const confirmed = confirm(`Found ${discoveredPlaylists.length} perspectives! Merge all episodes into a chronological master playlist?`);
+    if (!confirmed) {
+      setStatus("Scan cancelled.", false);
+      return;
+    }
+
+    setStatus("Collecting videos across all collaborator playlists...", true);
+
+    let allVideos = [];
+    for (const pl of discoveredPlaylists) {
+      let pToken = "";
+      do {
+        const pRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${pl.id}${pToken ? `&pageToken=${pToken}` : ""}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const pData = await pRes.json();
+        const vids = (pData.items || []).map(v => ({
+          videoId: v.contentDetails?.videoId || v.snippet?.resourceId?.videoId,
+          title: v.snippet?.title,
+          publishedAt: new Date(v.contentDetails?.videoPublishedAt || v.snippet?.publishedAt).getTime(),
+          channelTitle: v.snippet?.videoOwnerChannelTitle || pl.channelTitle || ""
+        }));
+        allVideos.push(...vids);
+        pToken = pData.nextPageToken || "";
+      } while (pToken);
+    }
+
+    const uniqueMap = new Map();
+    allVideos.forEach(v => {
+      if (v.videoId && !uniqueMap.has(v.videoId)) uniqueMap.set(v.videoId, v);
+    });
+    const sortedVideos = Array.from(uniqueMap.values()).sort((a, b) => a.publishedAt - b.publishedAt);
+
+    setStatus("Creating Master Chronological Playlist...", true);
+    const masterTitle = `${playlistTitle || "Collab Series"} [Master Chronological POV]`;
+    const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        snippet: {
+          title: masterTitle,
+          description: `Unified chronological Multi-POV series from: ${discoveredPlaylists.map(p => p.channelTitle || p.title).join(", ")}.`
+        },
+        status: { privacyStatus: "private" }
+      })
+    });
+    const newPl = await createRes.json();
+
+    for (let i = 0; i < sortedVideos.length; i++) {
+      setStatus(`Adding video ${i + 1}/${sortedVideos.length} to master playlist...`, true);
+      await fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          snippet: {
+            playlistId: newPl.id,
+            resourceId: { kind: "youtube#video", videoId: sortedVideos[i].videoId }
+          }
+        })
+      });
+      await new Promise(r => setTimeout(r, 120));
+    }
+
+    setStatus(`Master playlist compiled (${sortedVideos.length} videos)!`, false);
+    alert(`Created "${masterTitle}" with ${sortedVideos.length} chronological episodes!`);
+    if (typeof loadMyPlaylists === "function") loadMyPlaylists(true);
+
+  } catch (err) {
+    console.error(err);
+    alert("Collab scan error: " + err.message);
+    setStatus("Collab scan failed.", false);
+  }
+}
+
+
+      function showCreatorItemDetail(id) {
+        const isPlMode = creatorMode === "playlists";
+        if (isPlMode) {
+          const pl = creatorPlaylists.find(p => p.id === id);
+          if (!pl) return;
+          openPreviewSheet(
+            pl.id,
+            pl.snippet?.title || "Playlist",
+            `${currentCreatorData?.snippet?.title || "Creator"} • ${pl.contentDetails?.itemCount || 0} videos`,
+            pl.snippet?.thumbnails?.medium?.url || pl.snippet?.thumbnails?.default?.url || "",
+            pl.snippet?.description || "No description provided.",
+            `https://www.youtube.com/playlist?list=${pl.id}`
+          );
+        } else {
+          const vid = creatorVideos.find(v => (v.snippet?.resourceId?.videoId === id || v.contentDetails?.videoId === id || v.id === id));
+          if (!vid) return;
+          const rawDate = vid.contentDetails?.videoPublishedAt || vid.snippet?.publishedAt || "";
+          const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : "";
+          const vId = vid.contentDetails?.videoId || vid.snippet?.resourceId?.videoId || vid.id;
+          openPreviewSheet(
+            vId,
+            vid.snippet?.title || "Video",
+            `${currentCreatorData?.snippet?.title || "Creator"} • ${dateStr}`,
+            vid.snippet?.thumbnails?.medium?.url || vid.snippet?.thumbnails?.default?.url || "",
+            vid.snippet?.description || "No description provided.",
+            `https://www.youtube.com/watch?v=${vId}`
+          );
+        }
+      }
 
 
       function toggleSelectAllCreatorItems() {

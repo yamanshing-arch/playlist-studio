@@ -830,10 +830,23 @@
       openPreviewSheet(pl.id, pl.title, `${pl.count} videos in playlist`, pl.thumb, pl.description, `https://www.youtube.com/playlist?list=${pl.id}`);
     }
 
-    function toggleLibrarySelection(id) {
+      function toggleLibrarySelection(id) {
       selectedLibraryIds.has(id) ? selectedLibraryIds.delete(id) : selectedLibraryIds.add(id);
+
+      const selectAllBtn = document.querySelector("button[onclick*='toggleSelectAllLibrary']") || document.querySelector("span[onclick*='toggleSelectAllLibrary']");
+      if (selectAllBtn) {
+        selectAllBtn.textContent = (selectedLibraryIds.size === libraryPlaylists.length && libraryPlaylists.length > 0) ? "Deselect All" : "Select All";
+      }
+
+      const nameInput = document.getElementById("combinedTitleInput") || document.querySelector("input[placeholder*='Custom Super Marathon']");
+      if (nameInput && !nameInput.value.trim() && selectedLibraryIds.size === 1) {
+        const found = libraryPlaylists.find(p => p.id === id);
+        if (found) nameInput.value = `${found.title} (Chronological)`;
+      }
+
       renderLibraryPlaylists();
     }
+
 
         function toggleSelectAllLibrary() {
       const selectAllBtn = document.querySelector("button[onclick*='toggleSelectAllLibrary']") || document.querySelector("span[onclick*='toggleSelectAllLibrary']");

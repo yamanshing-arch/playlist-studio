@@ -617,6 +617,81 @@ function closePreviewSheet() {
   document.getElementById("previewSheetOverlay").classList.add("hidden");
   document.getElementById("previewSheet").classList.add("translate-y-full");
 }
+async function triggerPovScanFromPreview() {
+  if (!currentPreviewVideoId) return;
+  const scanBtn = document.getElementById("previewPovScanBtn");
+  const container = document.getElementById("previewPovContainer");
+  const token = gapi?.client?.getToken?.()?.access_token || tokenClient?.access_token || "";
+
+  if (!token) {
+    alert("Please connect your YouTube account first.");
+    return;
+  }
+
+  try {
+    scanBtn.disabled = true;
+    scanBtn.innerText = "Scanning description & channels...";
+    container.innerHTML = `<p class="text-xs text-purple-300 animate-pulse py-2">Searching collab channels & series playlists...</p>`;
+
+    const playlists = await discoverSeriesPlaylists(currentPreviewVideoId, token);
+
+    if (!playlists || playlists.length === 0) {
+      container.innerHTML = `<p class="text-xs text-slate-400 py-1">No matching collab series playlists found.</p>`;
+      scanBtn.innerText = "✨ Scan Multi-POV Series";
+      scanBtn.disabled = false;
+      return;
+    }
+
+    let html = `
+      <div class="mt-2 p-2.5 rounded-lg bg-slate-950/80 border border-purple-900/50 space-y-2">
+        <p class="text-[11px] font-bold text-purple-300 uppercase tracking-wider">Found ${playlists.length} Series Playlists:</p>
+        <div class="space-y-1 max-h-32 overflow-y-auto pr-1">
+    `;
+
+    playlists.forEach(pl => {
+      html += `
+        <div class="flex items-center justify-between text-xs text-slate-300 py-0.5 border-b border-slate-800/50 last:border-0">
+          <span class="truncate max-w-[200px] font-medium">${pl.channelTitle}: <span class="text-slate-400">${pl.title}</span></span>
+          <span class="text-[10px] text-purple-400 font-mono shrink-0 ml-2">${pl.itemCount} vids</span>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+        <button id="previewMergeBtn" class="w-full mt-2 py-2 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95">
+          Merge into Chronological Playlist
+        </button>
+      </div>
+    `;
+
+    container.innerHTML = html;
+    scanBtn.innerText = "Re-scan Series";
+    scanBtn.disabled = false;
+
+    document.getElementById("previewMergeBtn").onclick = async () => {
+      const mergeBtn = document.getElementById("previewMergeBtn");
+      mergeBtn.disabled = true;
+      mergeBtn.innerText = "Merging videos in chronological order...";
+      try {
+        const title = document.getElementById("previewTitle").innerText || "Multi-POV Series";
+        const newPlId = await mergeAndCreateChronoPlaylist(playlists, `${title} [Multi-POV Chrono]`, token);
+        alert(`Success! Unified playlist created (ID: ${newPlId}).`);
+        closePreviewSheet();
+        if (typeof loadMyPlaylists === "function") loadMyPlaylists(true);
+      } catch (err) {
+        alert("Merge failed: " + err.message);
+        mergeBtn.disabled = false;
+        mergeBtn.innerText = "Merge into Chronological Playlist";
+      }
+    };
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<p class="text-xs text-rose-400 py-1">Error: ${err.message}</p>`;
+    scanBtn.innerText = "✨ Scan Multi-POV Series";
+    scanBtn.disabled = false;
+  }
+}
 
 
     function setStatus(msg, isLoading = false) {

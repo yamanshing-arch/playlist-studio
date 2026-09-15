@@ -1382,20 +1382,31 @@
       }
     }
 
-    function toggleSelectAllCreatorItems() {
+      function toggleSelectAllCreatorItems() {
       const isPlMode = creatorMode === "playlists";
       const items = isPlMode ? creatorPlaylists : creatorVideos;
-      const allSelected = selectedCreatorItemIds.size === items.length;
-      selectedCreatorItemIds.clear();
-      if (!allSelected) {
+      const allSelected = items.length > 0 && items.every(item => {
+        const id = isPlMode ? item.id : (item.id?.videoId || item.id);
+        return selectedCreatorItemIds.has(id);
+      });
+
+      const selectBtn = document.querySelector("button[onclick*='toggleSelectAllCreatorItems']");
+
+      if (allSelected) {
+        selectedCreatorItemIds.clear();
+        if (selectBtn) selectBtn.textContent = "Select All";
+      } else {
         items.forEach(item => {
-          const id = isPlMode ? item.id : (item.snippet?.resourceId?.videoId || item.contentDetails?.videoId || item.id);
+          const id = isPlMode ? item.id : (item.id?.videoId || item.id);
           if (id) selectedCreatorItemIds.add(id);
         });
+        if (selectBtn) selectBtn.textContent = "Deselect All";
       }
+
       renderCreatorList();
       updateCreatorSelectedBadge();
     }
+
 
     async function saveCreatorSelectionToPlaylist() {
       if (selectedCreatorItemIds.size < 1) return alert("Select at least one item.");

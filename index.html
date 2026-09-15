@@ -1410,8 +1410,22 @@
 
     async function saveCreatorSelectionToPlaylist() {
       if (selectedCreatorItemIds.size < 1) return alert("Select at least one item.");
-      const title = document.getElementById("creatorNewPlaylistTitle").value.trim();
-      if (!title) return alert("Please enter a title for your new playlist.");
+          let title = document.getElementById("creatorCustomTitleInput")?.value?.trim() || "";
+
+      if (!title) {
+        const isPlMode = creatorMode === "playlists";
+        const items = isPlMode ? creatorPlaylists : creatorVideos;
+        if (selectedCreatorItemIds.size === 1) {
+          const singleId = Array.from(selectedCreatorItemIds)[0];
+          const found = items.find(item => (isPlMode ? item.id : (item.id?.videoId || item.id)) === singleId);
+          title = found ? `${found.title || found.snippet?.title} (Chronological)` : "Creator Playlist";
+        } else if (currentCreatorData?.title) {
+          title = `${currentCreatorData.title} Compilation`;
+        } else {
+          title = "Curated Marathon";
+        }
+      }
+
       const sortOrder = document.getElementById("creatorSortOrder").value;
 
       document.getElementById("creatorCreateBtn").disabled = true;

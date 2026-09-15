@@ -843,13 +843,19 @@
       }
 
       const nameInput = document.getElementById("combinedTitleInput") || document.querySelector("input[placeholder*='Custom Super Marathon']");
-      if (nameInput && !nameInput.value.trim() && selectedLibraryIds.size === 1) {
-        const found = libraryPlaylists.find(p => p.id === id);
-        if (found) nameInput.value = `${found.title} (Chronological)`;
+      if (nameInput) {
+        if (selectedLibraryIds.size === 1) {
+          const singleId = Array.from(selectedLibraryIds)[0];
+          const found = libraryPlaylists.find(p => p.id === singleId);
+          nameInput.value = found ? `${found.title} (Chronological)` : "";
+        } else {
+          nameInput.value = "";
+        }
       }
 
       renderLibraryPlaylists();
     }
+
 
 
         function toggleSelectAllLibrary() {

@@ -1417,6 +1417,8 @@
         });
         if (selectBtn) selectBtn.textContent = "Deselect All";
       }
+      const creatorTitleInput = document.getElementById("creatorCustomTitleInput");
+      if (creatorTitleInput) creatorTitleInput.value = "";
 
       renderCreatorList();
       updateCreatorSelectedBadge();

@@ -1600,15 +1600,18 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
       const sourceItems = isPlMode ? creatorPlaylists : creatorVideos;
 
       const visibleItems = localFilter 
-        ? sourceItems.filter(item => item.snippet.title.toLowerCase().includes(localFilter))
+      ? sourceItems.filter(item => (item.snippet?.title || "").toLowerCase().includes(localFilter))
+
         : sourceItems;
 
-      if (isPlMode) {
-        document.getElementById("contentCountLabel").innerText = `${creatorPlaylists.length} playlists loaded`;
-      } else {
-        const totalNote = activeInspectedPlaylist ? `${creatorVideos.length} episodes loaded` : `${creatorVideos.length} videos loaded`;
-        document.getElementById("contentCountLabel").innerText = totalNote;
-      }
+              const countEl = document.getElementById("contentCountLabel");
+          if (isPlMode) {
+            if (countEl) countEl.innerText = `${creatorPlaylists.length} playlists loaded`;
+          } else {
+            const totalNote = totalCreatorVideosCount ? ` / ${totalCreatorVideosCount.toLocaleString()} total` : "";
+            if (countEl) countEl.innerText = `${creatorVideos.length} videos loaded${totalNote}`;
+          }
+
 
       if (!visibleItems.length) {
         list.innerHTML = `<div class="p-3 text-center text-xs text-slate-500">No matching items found.</div>`;

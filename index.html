@@ -607,6 +607,15 @@
       document.getElementById("aboutModal").classList.add("hidden");
     }
     
+    function openTutorialModal() {
+      const drawer = document.getElementById("sideDrawer");
+      if (!drawer.classList.contains("-translate-x-full")) toggleDrawer();
+      document.getElementById("tutorialModal").classList.remove("hidden");
+    }
+
+    function closeTutorialModal() {
+      document.getElementById("tutorialModal").classList.add("hidden");
+    }
 
     function closeSuccessModal() {
       document.getElementById("successModal").classList.add("hidden");

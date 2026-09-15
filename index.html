@@ -1639,70 +1639,7 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
           ${isPlMode ? `
             <div class="pt-1.5 border-t border-slate-900 flex justify-end">
               <button onclick="event.stopPropagation(); inspectPlaylistVideos('${item.id}', '${item.snippet.title.replace(/'/g, "\\'")}')" class="bg-purple-950 hover:bg-purple-900 text-purple-300 border border-purple-800/60 px-2 py-1 rounded-md text-[10px] font-bold active:scale-95 transition flex items-center gap-1">
-                <span>🔍 Inspect Videos</span>
-                <span>➔</span>
-              </button>
-            </div>
-          ` : ''}
-        `;
-        list.appendChild(row);
-      });
-    }
 
-    function showCreatorItemDetail(id) {
-      const isPlMode = creatorMode === "playlists";
-      if (isPlMode) {
-        const pl = creatorPlaylists.find(p => p.id === id);
-        if (!pl) return;
-        openPreviewSheet(pl.id, pl.snippet.title, `${pl.contentDetails?.itemCount || 0} videos • ${currentCreatorData?.snippet?.title || ''}`, pl.snippet.thumbnails?.medium?.url || pl.snippet.thumbnails?.default?.url || "", pl.snippet.description, `https://www.youtube.com/playlist?list=${pl.id}`);
-      } else {
-        const vid = creatorVideos.find(v => (v.snippet?.resourceId?.videoId === id || v.contentDetails?.videoId === id || v.id === id));
-        if (!vid) return;
-        const rawDate = vid.contentDetails?.videoPublishedAt || vid.snippet?.publishedAt || "";
-        const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : "";
-        openPreviewSheet(id, vid.snippet.title, `${currentCreatorData?.snippet?.title || ''} • ${dateStr}`, vid.snippet.thumbnails?.medium?.url || vid.snippet.thumbnails?.default?.url || "", vid.snippet.description, `https://www.youtube.com/watch?v=${id}`);
-      }
-    }
-
-      function toggleCreatorItem(id) {
-      selectedCreatorItemIds.has(id) ? selectedCreatorItemIds.delete(id) : selectedCreatorItemIds.add(id);
-
-      const creatorTitleInput = document.getElementById("creatorCustomTitleInput");
-      if (creatorTitleInput) {
-        if (creatorMode === "playlists" && selectedCreatorItemIds.size === 1) {
-          const singleId = Array.from(selectedCreatorItemIds)[0];
-          const found = creatorPlaylists.find(item => item.id === singleId);
-          creatorTitleInput.value = found ? `${found.title || found.snippet?.title} (Chronological)` : "";
-        } else {
-          creatorTitleInput.value = "";
-        }
-      }
-
-      updateCreatorSelectedBadge();
-      renderCreatorList();
-    }
-
-
-    function updateCreatorSelectedBadge() {
-      const count = selectedCreatorItemIds.size;
-      document.getElementById("creatorSelectedBadge").innerText = `${count} selected`;
-
-      if (creatorMode === "videos") {
-        const estUnits = count > 0 ? (50 + (count * 50)).toLocaleString() : 0;
-        document.getElementById("quotaUnitEstimate").innerText = `~${estUnits} units (${count} videos)`;
-        
-        const bar = document.getElementById("quotaEstimatorBar");
-        if (count > 50) {
-          bar.className = "p-2 bg-amber-950/40 rounded-lg border border-amber-800/80 text-[11px] flex items-center justify-between";
-          document.getElementById("quotaUnitEstimate").className = "font-mono text-amber-300 font-semibold";
-        } else {
-          bar.className = "p-2 bg-slate-950 rounded-lg border border-slate-800 text-[11px] flex items-center justify-between";
-          document.getElementById("quotaUnitEstimate").className = "font-mono text-purple-300 font-semibold";
-        }
-      } else {
-        document.getElementById("quotaUnitEstimate").innerText = `Calculated on merge (${count} playlists)`;
-      }
-    }
 
       function toggleSelectAllCreatorItems() {
       const isPlMode = creatorMode === "playlists";

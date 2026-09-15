@@ -1418,6 +1418,18 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
         setStatus("Search error: " + err.message, false);
       }
     }
+function updateCreatorSelectedBadge() {
+  const badge = document.getElementById("creatorSelectedBadge");
+  if (badge) {
+    badge.innerText = `${selectedCreatorItemIds.size} selected`;
+  }
+  const estBar = document.getElementById("quotaEstimatorBar");
+  if (estBar) {
+    // Estimating ~50 units per video if creating/inserting
+    const count = selectedCreatorItemIds.size;
+    estBar.innerHTML = `<span class="text-slate-400">Est. Quota Cost:</span> <span class="font-bold text-purple-300">${count * 50} units (${count} items)</span>`;
+  }
+}
 
     function setCreatorMode(mode) {
       creatorMode = mode;

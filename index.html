@@ -1357,11 +1357,24 @@
       }
     }
 
-    function toggleCreatorItem(id) {
+      function toggleCreatorItem(id) {
       selectedCreatorItemIds.has(id) ? selectedCreatorItemIds.delete(id) : selectedCreatorItemIds.add(id);
+
+      const creatorTitleInput = document.getElementById("creatorCustomTitleInput");
+      if (creatorTitleInput) {
+        if (creatorMode === "playlists" && selectedCreatorItemIds.size === 1) {
+          const singleId = Array.from(selectedCreatorItemIds)[0];
+          const found = creatorPlaylists.find(item => item.id === singleId);
+          creatorTitleInput.value = found ? `${found.title || found.snippet?.title} (Chronological)` : "";
+        } else {
+          creatorTitleInput.value = "";
+        }
+      }
+
       updateCreatorSelectedBadge();
       renderCreatorList();
     }
+
 
     function updateCreatorSelectedBadge() {
       const count = selectedCreatorItemIds.size;

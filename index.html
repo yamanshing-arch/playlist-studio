@@ -651,6 +651,95 @@
       }
     }
 
+   function extractMentionedChannels(description) {
+  if (!description) return [];
+  const handleRegex = /@([a-zA-Z0-9_\-\.]+)/g;
+  const channelUrlRegex = /https?:\/\/(www\.)?youtube\.com\/(channel\/[a-zA-Z0-9_\-]+|@[a-zA-Z0-9_\-\.]+)/g;
+  const matches = new Set();
+  let match;
+  while ((match = handleRegex.exec(description)) !== null) {
+    matches.add(match[1]);
+  }
+  while ((match = channelUrlRegex.exec(description)) !== null) {
+    matches.add(match[2] || match[0]);
+  }
+  return Array.from(matches);
+}
+
+function extractKeywords(title) {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 2 && !['part', 'episode', 'ep', 'the', 'and', 'with', 'video'].includes(word));
+  }
+
+  
+async function discoverSeriesPlaylists(seedVideoId, userAccessToken) {
+  const headers = { Authorization: `Bearer ${userAccessToken}` };
+  const vidRes = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${seedVideoId}`,
+    { headers }
+  );
+  const vidData = await vidRes.json();
+  const seedVideo = vidData.items?.[0];
+  if (!seedVideo) throw new Error("Video not found.");
+
+  const primaryChannelId = seedVideo.snippet.channelId;
+  const title = seedVideo.snippet.title;
+  const description = seedVideo.snippet.description;
+  const keywords = extractKeywords(title);
+
+  const candidateChannelIds = [primaryChannelId];
+  const mentions = extractMentionedChannels(description);
+
+  for (const mention of mentions.slice(0, 4)) {
+    try {
+      const cleanHandle = mention.replace(/^@/, '');
+      const chanRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${cleanHandle}`,
+        { headers }
+      );
+      const chanData = await chanRes.json();
+      if (chanData.items?.[0]?.id) {
+        candidateChannelIds.push(chanData.items[0].id);
+      }
+    } catch (e) {
+      console.warn("Could not resolve handle:", mention);
+    }
+  }
+
+  const discoveredPlaylists = [];
+
+  for (const chId of candidateChannelIds) {
+    const plRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${chId}&maxResults=50`,
+      { headers }
+    );
+    const plData = await plRes.json();
+
+    if (plData.items) {
+      for (const pl of plData.items) {
+        const plTitle = pl.snippet.title.toLowerCase();
+        const matchScore = keywords.filter(k => plTitle.includes(k)).length;
+
+        if (matchScore >= 2) {
+          discoveredPlaylists.push({
+            playlistId: pl.id,
+            title: pl.snippet.title,
+            channelTitle: pl.snippet.channelTitle,
+            itemCount: pl.contentDetails.itemCount,
+            matchScore
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  return discoveredPlaylists;
+}
+ 
     function navigateTo(view) {
       toggleDrawer();
       document.getElementById("view-library").classList.add("hidden");

@@ -876,8 +876,21 @@
 
     async function combineLibraryPlaylists() {
       if (selectedLibraryIds.size < 1) return alert("Select at least one playlist to combine.");
-      const title = document.getElementById("combinedTitleInput").value.trim();
-      if (!title) return alert("Please enter a title for your combined playlist.");
+        let title = document.getElementById("combinedTitleInput")?.value?.trim() || "";
+
+      if (!title) {
+        if (selectedLibraryIds.size === 1) {
+          const singleId = Array.from(selectedLibraryIds)[0];
+          const found = libraryPlaylists.find(p => p.id === singleId);
+          title = found ? `${found.title} (Chronological)` : "My Playlist";
+        } else {
+          const names = Array.from(selectedLibraryIds)
+            .map(id => libraryPlaylists.find(p => p.id === id)?.title)
+            .filter(Boolean);
+          title = names.slice(0, 2).join(" + ") + (names.length > 2 ? ` & ${names.length - 2} more` : "");
+        }
+      }
+
       const sortOrder = document.getElementById("librarySortOrder").value;
 
       const confirmAction = confirm(`Create "${title}" by combining ${selectedLibraryIds.size} playlist(s)?`);

@@ -1510,9 +1510,14 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
         const data = await res.json();
         nextCreatorPlaylistsPageToken = data.nextPageToken || null;
 
-        const items = (data.items || []).filter(p => !keyword || p.snippet.title.toLowerCase().includes(keyword.toLowerCase()));
-        creatorPlaylists = creatorPlaylists.concat(items);
-        renderCreatorList();
+                const rawItems = data.items || [];
+          const kw = (keyword || "").trim().toLowerCase();
+          const items = kw 
+            ? rawItems.filter(p => (p.snippet?.title || "").toLowerCase().includes(kw))
+            : rawItems;
+          creatorPlaylists = creatorPlaylists.concat(items);
+          renderCreatorList();
+
 
         nextCreatorPlaylistsPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
         loadMoreBtn.innerText = "⬇️ Load More Playlists (Next 50)";

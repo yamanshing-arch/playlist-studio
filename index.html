@@ -739,7 +739,81 @@ async function discoverSeriesPlaylists(seedVideoId, userAccessToken) {
 
   return discoveredPlaylists;
 }
- 
+async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistTitle, userAccessToken) {
+  const headers = {
+    Authorization: `Bearer ${userAccessToken}`,
+    'Content-Type': 'application/json'
+  };
+
+  const allVideos = [];
+
+  for (const pl of discoveredPlaylists) {
+    let nextPageToken = '';
+    do {
+      const res = await fetch(
+        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${pl.playlistId}&maxResults=50&pageToken=${nextPageToken}`,
+        { headers }
+      );
+      const data = await res.json();
+      
+      if (data.items) {
+        data.items.forEach(item => {
+          allVideos.push({
+            videoId: item.snippet.resourceId.videoId,
+            title: item.snippet.title,
+            channel: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
+            publishedAt: item.snippet.publishedAt
+          });
+        });
+      }
+      nextPageToken = data.nextPageToken || '';
+    } while (nextPageToken);
+  }
+
+  allVideos.sort((a, b) => new Date(a.publishedAt) - new Date(b.publishedAt));
+
+  const createPlRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,status`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      snippet: {
+        title: targetPlaylistTitle,
+        description: `Chronological Multi-POV playlist created via Playlist Studio for YT.\nSources:\n` +
+          discoveredPlaylists.map(p => `- ${p.channelTitle}: ${p.title}`).join('\n')
+      },
+      status: { privacyStatus: 'unlisted' }
+    })
+  });
+  const createdPlaylist = await createPlRes.json();
+  const masterPlaylistId = createdPlaylist.id;
+
+  for (const vid of allVideos) {
+    await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        snippet: {
+          playlistId: masterPlaylistId,
+          resourceId: {
+            kind: 'youtube#video',
+            videoId: vid.videoId
+          }
+        }
+      })
+    });
+  }
+
+  const syncRecord = {
+    masterPlaylistId,
+    sourcePlaylists: discoveredPlaylists.map(p => p.playlistId),
+    syncedVideoIds: allVideos.map(v => v.videoId),
+    lastSyncTime: new Date().toISOString()
+  };
+  localStorage.setItem(`pov_sync_${masterPlaylistId}`, JSON.stringify(syncRecord));
+
+  return masterPlaylistId;
+}
+    
     function navigateTo(view) {
       toggleDrawer();
       document.getElementById("view-library").classList.add("hidden");

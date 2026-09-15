@@ -858,9 +858,10 @@
 
 
 
-        function toggleSelectAllLibrary() {
+          function toggleSelectAllLibrary() {
       const selectAllBtn = document.querySelector("button[onclick*='toggleSelectAllLibrary']") || document.querySelector("span[onclick*='toggleSelectAllLibrary']");
       const allSelected = libraryPlaylists.length > 0 && selectedLibraryIds.size === libraryPlaylists.length;
+      const nameInput = document.getElementById("combinedTitleInput") || document.querySelector("input[placeholder*='Custom Super Marathon']");
 
       if (allSelected) {
         selectedLibraryIds.clear();
@@ -870,18 +871,13 @@
         if (selectAllBtn) selectAllBtn.textContent = "Deselect All";
       }
 
-      // Auto-populate name field if single item selected
-      const nameInput = document.getElementById("combinedTitleInput") || document.querySelector("input[placeholder*='Custom Super Marathon']");
-      if (nameInput && !nameInput.value.trim()) {
-        if (selectedLibraryIds.size === 1) {
-          const firstId = Array.from(selectedLibraryIds)[0];
-          const found = libraryPlaylists.find(p => p.id === firstId);
-          if (found) nameInput.value = `${found.title} (Chronological)`;
-        }
+      if (nameInput) {
+        nameInput.value = "";
       }
 
       renderLibraryPlaylists();
     }
+
 
 
     async function combineLibraryPlaylists() {

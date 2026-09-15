@@ -221,6 +221,46 @@
       </button>
     </div>
   </div>
+    <!-- ================= HOW TO USE / TUTORIAL MODAL ================= -->
+  <div id="tutorialModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-lg w-full rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto text-left text-xs text-slate-300">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-sm font-black text-cyan-400 uppercase tracking-wide">📖 How to Use Playlist Studio</h3>
+        <button onclick="closeTutorialModal()" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-4 leading-relaxed">
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+          <p class="font-bold text-purple-300 text-[11px] uppercase">1. Combine Existing Playlists</p>
+          <p class="text-slate-400">Select two or more playlists in <strong>My Library</strong>, name your new collection, choose an order, and tap <strong>Combine Playlists</strong>. The app merges all episodes into a brand-new YouTube playlist in your account.</p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+          <p class="font-bold text-cyan-300 text-[11px] uppercase">2. Episode Binging & Chronological Order</p>
+          <p class="text-slate-400">YouTube channels often autoplay backwards. Use the <strong>📅 1-9 Oldest</strong> button in the Creator Explorer to arrange series from the very first episode to the latest, ensuring continuous chronological playback.</p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+          <p class="font-bold text-amber-300 text-[11px] uppercase">3. Sequence Shaping Tools</p>
+          <ul class="list-disc list-inside space-y-1 text-slate-400">
+            <li><strong class="text-slate-200">⇅ Invert:</strong> Reverse the current screen sequence with one tap.</li>
+            <li><strong class="text-slate-200">🔀 Shuffle:</strong> Randomize the queue for variety marathons.</li>
+            <li><strong class="text-slate-200">Strip Filter:</strong> Type a keyword like <em>#shorts</em> or <em>trailer</em> and press <strong>Strip</strong> to discard matching items in bulk.</li>
+          </ul>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+          <p class="font-bold text-emerald-300 text-[11px] uppercase">4. Smart Delta Sync</p>
+          <p class="text-slate-400">Playlists created here are linked to their sources. When a creator uploads new episodes, tap <strong>🔄 Check for New Videos</strong> in your library to append only the newest uploads—saving API quota without remaking the entire list.</p>
+        </div>
+      </div>
+
+      <button onclick="closeTutorialModal()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 rounded-xl text-xs transition">
+        Got It
+      </button>
+    </div>
+  </div>
+
 
   <!-- ================= CREATION PROGRESS MODAL ================= -->
   <div id="progressModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">

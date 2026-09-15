@@ -590,21 +590,34 @@
       document.getElementById("quotaGuideModal").classList.add("hidden");
     }
 
-    function openPreviewSheet(id, title, subtitle, thumb, extraInfo, watchUrl) {
-      document.getElementById("previewTitle").innerText = title;
-      document.getElementById("previewSubtitle").innerText = subtitle;
-      document.getElementById("previewThumb").src = thumb;
-      document.getElementById("previewExtra").innerText = extraInfo || "No additional description available.";
-      document.getElementById("previewWatchBtn").href = watchUrl;
+  let currentPreviewVideoId = null;
 
-      document.getElementById("previewSheetOverlay").classList.remove("hidden");
-      document.getElementById("previewSheet").classList.remove("translate-y-full");
-    }
+function openPreviewSheet(id, title, subtitle, thumb, extraInfo, watchUrl) {
+  currentPreviewVideoId = id;
+  document.getElementById("previewTitle").innerText = title;
+  document.getElementById("previewSubtitle").innerText = subtitle;
+  document.getElementById("previewThumb").src = thumb;
+  document.getElementById("previewExtra").innerText = extraInfo || "No additional description available.";
+  document.getElementById("previewWatchBtn").href = watchUrl;
 
-    function closePreviewSheet() {
-      document.getElementById("previewSheetOverlay").classList.add("hidden");
-      document.getElementById("previewSheet").classList.add("translate-y-full");
-    }
+  const povContainer = document.getElementById("previewPovContainer");
+  if (povContainer) povContainer.innerHTML = "";
+  const scanBtn = document.getElementById("previewPovScanBtn");
+  if (scanBtn) {
+    scanBtn.disabled = false;
+    scanBtn.innerText = "✨ Scan Multi-POV Series";
+  }
+
+  document.getElementById("previewSheetOverlay").classList.remove("hidden");
+  document.getElementById("previewSheet").classList.remove("translate-y-full");
+}
+
+function closePreviewSheet() {
+  currentPreviewVideoId = null;
+  document.getElementById("previewSheetOverlay").classList.add("hidden");
+  document.getElementById("previewSheet").classList.add("translate-y-full");
+}
+
 
     function setStatus(msg, isLoading = false) {
       document.getElementById("statusBox").innerText = msg;

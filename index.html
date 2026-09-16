@@ -124,10 +124,9 @@
     </div>
 
     <div class="pt-4 border-t border-slate-800 space-y-2">
-         <button onclick="openTutorialModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-cyan-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition mb-2">
+      <button onclick="openTutorialModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-cyan-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition mb-2">
         <span>📖</span> How to Use & Tutorial
       </button>
-  
       <button onclick="openAboutModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-purple-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition">
         <span>ℹ️</span> About & Credits
       </button>
@@ -135,23 +134,41 @@
     </div>
   </div>
 
-  <!-- ================= ITEM PREVIEW BOTTOM SHEET ================= -->
-  <div id="previewSheetOverlay" onclick="closePreviewSheet()" class="fixed inset-0 bg-black/70 z-50 hidden transition-opacity"></div>
-  <div id="previewSheet" class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-slate-900 border-t border-slate-800 rounded-t-3xl p-5 z-50 transform translate-y-full transition-transform duration-300 space-y-4 shadow-2xl">
-    <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-2"></div>
-    <div class="flex items-start gap-3">
-      <img id="previewThumb" class="w-24 h-16 object-cover rounded-xl bg-slate-950 shrink-0" src="" alt="Thumbnail" />
-      <div class="flex-1 min-w-0 text-left">
-        <h4 id="previewTitle" class="text-sm font-bold text-slate-100 leading-snug"></h4>
-        <p id="previewSubtitle" class="text-xs text-slate-400 mt-1"></p>
+  <!-- ================= ITEM PREVIEW BOTTOM SHEET (UNIFIED) ================= -->
+  <div id="previewSheetOverlay" class="fixed inset-0 bg-black/70 z-50 hidden backdrop-blur-sm transition-opacity" onclick="closePreviewSheet()"></div>
+  <div id="previewSheet" class="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 rounded-t-2xl z-50 p-4 max-h-[85vh] overflow-y-auto transform translate-y-full transition-transform duration-300 max-w-lg mx-auto shadow-2xl space-y-4">
+    <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-2 cursor-pointer" onclick="closePreviewSheet()"></div>
+    
+    <div class="flex gap-3 items-start">
+      <img id="previewThumb" class="w-28 aspect-video rounded-xl object-cover bg-slate-950 border border-slate-800 shrink-0" src="" alt="Thumbnail">
+      <div class="min-w-0 flex-1 text-left">
+        <h3 id="previewTitle" class="text-sm font-bold text-slate-100 line-clamp-2 leading-snug"></h3>
+        <p id="previewSubtitle" class="text-xs text-purple-400 mt-1 truncate"></p>
       </div>
     </div>
-    <div id="previewExtra" class="p-3 bg-slate-950 rounded-xl text-xs text-slate-400 text-left leading-relaxed max-h-36 overflow-y-auto"></div>
-    <div class="flex gap-2">
-      <a id="previewWatchBtn" href="#" target="_blank" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+
+    <div class="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80 max-h-36 overflow-y-auto text-left">
+      <p id="previewExtra" class="text-xs text-slate-400 whitespace-pre-line leading-relaxed"></p>
+    </div>
+
+    <!-- Multi-POV Discovery Section -->
+    <div class="w-full space-y-2">
+      <button 
+        type="button" 
+        id="previewPovScanBtn" 
+        onclick="triggerPovScanFromPreview()" 
+        class="w-full py-2.5 px-3 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-200 text-xs font-semibold flex items-center justify-center gap-2 transition active:scale-95 shadow-sm">
+        ✨ Scan Multi-POV Series
+      </button>
+      <div id="previewPovContainer"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="grid grid-cols-2 gap-2 pt-1">
+      <a id="previewWatchBtn" target="_blank" href="#" class="text-center py-2.5 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition active:scale-95 shadow-sm flex items-center justify-center gap-1.5">
         <span>▶</span> Watch on YouTube
       </a>
-      <button onclick="closePreviewSheet()" class="px-5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition">
+      <button type="button" onclick="closePreviewSheet()" class="py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition active:scale-95">
         Done
       </button>
     </div>
@@ -238,7 +255,8 @@
       </button>
     </div>
   </div>
-    <!-- ================= HOW TO USE / TUTORIAL MODAL ================= -->
+
+  <!-- ================= HOW TO USE / TUTORIAL MODAL ================= -->
   <div id="tutorialModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 max-w-lg w-full rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto text-left text-xs text-slate-300">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -277,7 +295,6 @@
       </button>
     </div>
   </div>
-
 
   <!-- ================= CREATION PROGRESS MODAL ================= -->
   <div id="progressModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
@@ -319,45 +336,6 @@
       </button>
     </div>
   </div>
-<!-- VIDEO DETAIL PREVIEW BOTTOM SHEET -->
-<div id="previewSheetOverlay" class="fixed inset-0 bg-black/60 z-50 hidden backdrop-blur-sm transition-opacity" onclick="closePreviewSheet()"></div>
-<div id="previewSheet" class="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 rounded-t-2xl z-50 p-4 max-h-[85vh] overflow-y-auto transform translate-y-full transition-transform duration-300 max-w-lg mx-auto shadow-2xl">
-  <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer" onclick="closePreviewSheet()"></div>
-  
-  <div class="flex gap-3 items-start mb-4">
-    <img id="previewThumb" class="w-28 aspect-video rounded-lg object-cover bg-slate-950 border border-slate-800 shrink-0" src="" alt="Thumbnail">
-    <div class="min-w-0 flex-1">
-      <h3 id="previewTitle" class="text-sm font-bold text-slate-100 line-clamp-2"></h3>
-      <p id="previewSubtitle" class="text-xs text-purple-400 mt-1 truncate"></p>
-    </div>
-  </div>
-
-  <div class="bg-slate-950/60 rounded-lg p-2.5 border border-slate-800/80 mb-4 max-h-36 overflow-y-auto">
-    <p id="previewExtra" class="text-xs text-slate-400 whitespace-pre-line leading-relaxed"></p>
-  </div>
-
-  <!-- Multi-POV Discovery Section -->
-  <div class="w-full mb-3 space-y-2">
-    <button 
-      type="button"
-      id="previewPovScanBtn" 
-      onclick="triggerPovScanFromPreview()" 
-      class="w-full py-2.5 px-3 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-200 text-xs font-semibold flex items-center justify-center gap-2 transition active:scale-95 shadow-sm">
-      ✨ Scan Multi-POV Series
-    </button>
-    <div id="previewPovContainer"></div>
-  </div>
-
-  <!-- Actions -->
-  <div class="grid grid-cols-2 gap-2 pt-1">
-    <a id="previewWatchBtn" target="_blank" class="text-center py-2.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition active:scale-95 shadow-sm">
-      Watch on YouTube
-    </a>
-    <button type="button" onclick="closePreviewSheet()" class="py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition active:scale-95">
-      Done
-    </button>
-  </div>
-</div>
 
   <!-- ================= TOP HEADER ================= -->
   <header class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between backdrop-blur">
@@ -472,6 +450,7 @@
           <div class="relative">
             <input id="creatorLocalFilterInput" oninput="renderCreatorList()" type="text" placeholder="🔎 Filter loaded results on screen..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-purple-500 placeholder:text-slate-500" />
           </div>
+
           <!-- SMART SEQUENCE SHAPING TOOLBAR -->
           <div class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-1 flex-wrap">
@@ -500,8 +479,7 @@
                 Strip
               </button>
             </div>
-                <div id="stripFeedbackBanner" class="hidden mt-2"></div>
-  
+            <div id="stripFeedbackBanner" class="hidden mt-2"></div>
           </div>
 
           <div id="creatorItemsList" class="max-h-80 overflow-y-auto space-y-2 pr-1"></div>
@@ -629,109 +607,109 @@
       document.getElementById("quotaGuideModal").classList.add("hidden");
     }
 
-  let currentPreviewVideoId = null;
+    let currentPreviewVideoId = null;
 
-function openPreviewSheet(id, title, subtitle, thumb, extraInfo, watchUrl) {
-  currentPreviewVideoId = id;
-  document.getElementById("previewTitle").innerText = title;
-  document.getElementById("previewSubtitle").innerText = subtitle;
-  document.getElementById("previewThumb").src = thumb;
-  document.getElementById("previewExtra").innerText = extraInfo || "No additional description available.";
-  document.getElementById("previewWatchBtn").href = watchUrl;
+    function openPreviewSheet(id, title, subtitle, thumb, extraInfo, watchUrl) {
+      currentPreviewVideoId = id;
+      document.getElementById("previewTitle").innerText = title;
+      document.getElementById("previewSubtitle").innerText = subtitle;
+      document.getElementById("previewThumb").src = thumb;
+      document.getElementById("previewExtra").innerText = extraInfo || "No additional description available.";
+      document.getElementById("previewWatchBtn").href = watchUrl;
 
-  const povContainer = document.getElementById("previewPovContainer");
-  if (povContainer) povContainer.innerHTML = "";
-  const scanBtn = document.getElementById("previewPovScanBtn");
-  if (scanBtn) {
-    scanBtn.disabled = false;
-    scanBtn.innerText = "✨ Scan Multi-POV Series";
-  }
+      const povContainer = document.getElementById("previewPovContainer");
+      if (povContainer) povContainer.innerHTML = "";
+      const scanBtn = document.getElementById("previewPovScanBtn");
+      if (scanBtn) {
+        scanBtn.disabled = false;
+        scanBtn.innerText = "✨ Scan Multi-POV Series";
+      }
 
-  document.getElementById("previewSheetOverlay").classList.remove("hidden");
-  document.getElementById("previewSheet").classList.remove("translate-y-full");
-}
-
-function closePreviewSheet() {
-  currentPreviewVideoId = null;
-  document.getElementById("previewSheetOverlay").classList.add("hidden");
-  document.getElementById("previewSheet").classList.add("translate-y-full");
-}
-async function triggerPovScanFromPreview() {
-  if (!currentPreviewVideoId) return;
-  const scanBtn = document.getElementById("previewPovScanBtn");
-  const container = document.getElementById("previewPovContainer");
-  const token = gapi?.client?.getToken?.()?.access_token || tokenClient?.access_token || "";
-
-  if (!token) {
-    alert("Please connect your YouTube account first.");
-    return;
-  }
-
-  try {
-    scanBtn.disabled = true;
-    scanBtn.innerText = "Scanning description & channels...";
-    container.innerHTML = `<p class="text-xs text-purple-300 animate-pulse py-2">Searching collab channels & series playlists...</p>`;
-
-    const playlists = await discoverSeriesPlaylists(currentPreviewVideoId, token);
-
-    if (!playlists || playlists.length === 0) {
-      container.innerHTML = `<p class="text-xs text-slate-400 py-1">No matching collab series playlists found.</p>`;
-      scanBtn.innerText = "✨ Scan Multi-POV Series";
-      scanBtn.disabled = false;
-      return;
+      document.getElementById("previewSheetOverlay").classList.remove("hidden");
+      document.getElementById("previewSheet").classList.remove("translate-y-full");
     }
 
-    let html = `
-      <div class="mt-2 p-2.5 rounded-lg bg-slate-950/80 border border-purple-900/50 space-y-2">
-        <p class="text-[11px] font-bold text-purple-300 uppercase tracking-wider">Found ${playlists.length} Series Playlists:</p>
-        <div class="space-y-1 max-h-32 overflow-y-auto pr-1">
-    `;
+    function closePreviewSheet() {
+      currentPreviewVideoId = null;
+      document.getElementById("previewSheetOverlay").classList.add("hidden");
+      document.getElementById("previewSheet").classList.add("translate-y-full");
+    }
 
-    playlists.forEach(pl => {
-      html += `
-        <div class="flex items-center justify-between text-xs text-slate-300 py-0.5 border-b border-slate-800/50 last:border-0">
-          <span class="truncate max-w-[200px] font-medium">${pl.channelTitle}: <span class="text-slate-400">${pl.title}</span></span>
-          <span class="text-[10px] text-purple-400 font-mono shrink-0 ml-2">${pl.itemCount} vids</span>
-        </div>
-      `;
-    });
+    async function triggerPovScanFromPreview() {
+      if (!currentPreviewVideoId) return;
+      const scanBtn = document.getElementById("previewPovScanBtn");
+      const container = document.getElementById("previewPovContainer");
+      const token = accessToken || "";
 
-    html += `
-        </div>
-        <button id="previewMergeBtn" class="w-full mt-2 py-2 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95">
-          Merge into Chronological Playlist
-        </button>
-      </div>
-    `;
-
-    container.innerHTML = html;
-    scanBtn.innerText = "Re-scan Series";
-    scanBtn.disabled = false;
-
-    document.getElementById("previewMergeBtn").onclick = async () => {
-      const mergeBtn = document.getElementById("previewMergeBtn");
-      mergeBtn.disabled = true;
-      mergeBtn.innerText = "Merging videos in chronological order...";
-      try {
-        const title = document.getElementById("previewTitle").innerText || "Multi-POV Series";
-        const newPlId = await mergeAndCreateChronoPlaylist(playlists, `${title} [Multi-POV Chrono]`, token);
-        alert(`Success! Unified playlist created (ID: ${newPlId}).`);
-        closePreviewSheet();
-        if (typeof loadMyPlaylists === "function") loadMyPlaylists(true);
-      } catch (err) {
-        alert("Merge failed: " + err.message);
-        mergeBtn.disabled = false;
-        mergeBtn.innerText = "Merge into Chronological Playlist";
+      if (!token) {
+        alert("Please connect your YouTube account first.");
+        return;
       }
-    };
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = `<p class="text-xs text-rose-400 py-1">Error: ${err.message}</p>`;
-    scanBtn.innerText = "✨ Scan Multi-POV Series";
-    scanBtn.disabled = false;
-  }
-}
 
+      try {
+        scanBtn.disabled = true;
+        scanBtn.innerText = "Scanning description & channels...";
+        container.innerHTML = `<p class="text-xs text-purple-300 animate-pulse py-2">Searching collab channels & series playlists...</p>`;
+
+        const playlists = await discoverSeriesPlaylists(currentPreviewVideoId, token);
+
+        if (!playlists || playlists.length === 0) {
+          container.innerHTML = `<p class="text-xs text-slate-400 py-1">No matching collab series playlists found.</p>`;
+          scanBtn.innerText = "✨ Scan Multi-POV Series";
+          scanBtn.disabled = false;
+          return;
+        }
+
+        let html = `
+          <div class="mt-2 p-2.5 rounded-lg bg-slate-950/80 border border-purple-900/50 space-y-2">
+            <p class="text-[11px] font-bold text-purple-300 uppercase tracking-wider">Found ${playlists.length} Series Playlists:</p>
+            <div class="space-y-1 max-h-32 overflow-y-auto pr-1">
+        `;
+
+        playlists.forEach(pl => {
+          html += `
+            <div class="flex items-center justify-between text-xs text-slate-300 py-0.5 border-b border-slate-800/50 last:border-0">
+              <span class="truncate max-w-[200px] font-medium">${pl.channelTitle}: <span class="text-slate-400">${pl.title}</span></span>
+              <span class="text-[10px] text-purple-400 font-mono shrink-0 ml-2">${pl.itemCount} vids</span>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+            <button id="previewMergeBtn" class="w-full mt-2 py-2 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md active:scale-95">
+              Merge into Chronological Playlist
+            </button>
+          </div>
+        `;
+
+        container.innerHTML = html;
+        scanBtn.innerText = "Re-scan Series";
+        scanBtn.disabled = false;
+
+        document.getElementById("previewMergeBtn").onclick = async () => {
+          const mergeBtn = document.getElementById("previewMergeBtn");
+          mergeBtn.disabled = true;
+          mergeBtn.innerText = "Merging videos in chronological order...";
+          try {
+            const title = document.getElementById("previewTitle").innerText || "Multi-POV Series";
+            const newPlId = await mergeAndCreateChronoPlaylist(playlists, `${title} [Multi-POV Chrono]`, token);
+            alert(`Success! Unified playlist created (ID: ${newPlId}).`);
+            closePreviewSheet();
+            if (typeof loadMyPlaylists === "function") loadMyPlaylists(true);
+          } catch (err) {
+            alert("Merge failed: " + err.message);
+            mergeBtn.disabled = false;
+            mergeBtn.innerText = "Merge into Chronological Playlist";
+          }
+        };
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = `<p class="text-xs text-rose-400 py-1">Error: ${err.message}</p>`;
+        scanBtn.innerText = "✨ Scan Multi-POV Series";
+        scanBtn.disabled = false;
+      }
+    }
 
     function setStatus(msg, isLoading = false) {
       document.getElementById("statusBox").innerText = msg;
@@ -778,168 +756,168 @@ async function triggerPovScanFromPreview() {
       }
     }
 
-   function extractMentionedChannels(description) {
-  if (!description) return [];
-  const handleRegex = /@([a-zA-Z0-9_\-\.]+)/g;
-  const channelUrlRegex = /https?:\/\/(www\.)?youtube\.com\/(channel\/[a-zA-Z0-9_\-]+|@[a-zA-Z0-9_\-\.]+)/g;
-  const matches = new Set();
-  let match;
-  while ((match = handleRegex.exec(description)) !== null) {
-    matches.add(match[1]);
-  }
-  while ((match = channelUrlRegex.exec(description)) !== null) {
-    matches.add(match[2] || match[0]);
-  }
-  return Array.from(matches);
-}
+    function extractMentionedChannels(description) {
+      if (!description) return [];
+      const handleRegex = /@([a-zA-Z0-9_\-\.]+)/g;
+      const channelUrlRegex = /https?:\/\/(www\.)?youtube\.com\/(channel\/[a-zA-Z0-9_\-]+|@[a-zA-Z0-9_\-\.]+)/g;
+      const matches = new Set();
+      let match;
+      while ((match = handleRegex.exec(description)) !== null) {
+        matches.add(match[1]);
+      }
+      while ((match = channelUrlRegex.exec(description)) !== null) {
+        matches.add(match[2] || match[0]);
+      }
+      return Array.from(matches);
+    }
 
-function extractKeywords(title) {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .split(/\s+/)
-      .filter(word => word.length > 2 && !['part', 'episode', 'ep', 'the', 'and', 'with', 'video'].includes(word));
-  }
+    function extractKeywords(title) {
+      return title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !['part', 'episode', 'ep', 'the', 'and', 'with', 'video'].includes(word));
+    }
 
-  
-async function discoverSeriesPlaylists(seedVideoId, userAccessToken) {
-  const headers = { Authorization: `Bearer ${userAccessToken}` };
-  const vidRes = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${seedVideoId}`,
-    { headers }
-  );
-  const vidData = await vidRes.json();
-  const seedVideo = vidData.items?.[0];
-  if (!seedVideo) throw new Error("Video not found.");
-
-  const primaryChannelId = seedVideo.snippet.channelId;
-  const title = seedVideo.snippet.title;
-  const description = seedVideo.snippet.description;
-  const keywords = extractKeywords(title);
-
-  const candidateChannelIds = [primaryChannelId];
-  const mentions = extractMentionedChannels(description);
-
-  for (const mention of mentions.slice(0, 4)) {
-    try {
-      const cleanHandle = mention.replace(/^@/, '');
-      const chanRes = await fetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${cleanHandle}`,
+    async function discoverSeriesPlaylists(seedVideoId, userAccessToken) {
+      const headers = { Authorization: `Bearer ${userAccessToken}` };
+      const vidRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${seedVideoId}`,
         { headers }
       );
-      const chanData = await chanRes.json();
-      if (chanData.items?.[0]?.id) {
-        candidateChannelIds.push(chanData.items[0].id);
-      }
-    } catch (e) {
-      console.warn("Could not resolve handle:", mention);
-    }
-  }
+      const vidData = await vidRes.json();
+      const seedVideo = vidData.items?.[0];
+      if (!seedVideo) throw new Error("Video not found.");
 
-  const discoveredPlaylists = [];
+      const primaryChannelId = seedVideo.snippet.channelId;
+      const title = seedVideo.snippet.title;
+      const description = seedVideo.snippet.description;
+      const keywords = extractKeywords(title);
 
-  for (const chId of candidateChannelIds) {
-    const plRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${chId}&maxResults=50`,
-      { headers }
-    );
-    const plData = await plRes.json();
+      const candidateChannelIds = [primaryChannelId];
+      const mentions = extractMentionedChannels(description);
 
-    if (plData.items) {
-      for (const pl of plData.items) {
-        const plTitle = pl.snippet.title.toLowerCase();
-        const matchScore = keywords.filter(k => plTitle.includes(k)).length;
-
-        if (matchScore >= 2) {
-          discoveredPlaylists.push({
-            playlistId: pl.id,
-            title: pl.snippet.title,
-            channelTitle: pl.snippet.channelTitle,
-            itemCount: pl.contentDetails.itemCount,
-            matchScore
-          });
-          break;
+      for (const mention of mentions.slice(0, 4)) {
+        try {
+          const cleanHandle = mention.replace(/^@/, '');
+          const chanRes = await fetch(
+            `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${cleanHandle}`,
+            { headers }
+          );
+          const chanData = await chanRes.json();
+          if (chanData.items?.[0]?.id) {
+            candidateChannelIds.push(chanData.items[0].id);
+          }
+        } catch (e) {
+          console.warn("Could not resolve handle:", mention);
         }
       }
-    }
-  }
 
-  return discoveredPlaylists;
-}
-async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistTitle, userAccessToken) {
-  const headers = {
-    Authorization: `Bearer ${userAccessToken}`,
-    'Content-Type': 'application/json'
-  };
+      const discoveredPlaylists = [];
 
-  const allVideos = [];
+      for (const chId of candidateChannelIds) {
+        const plRes = await fetch(
+          `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${chId}&maxResults=50`,
+          { headers }
+        );
+        const plData = await plRes.json();
 
-  for (const pl of discoveredPlaylists) {
-    let nextPageToken = '';
-    do {
-      const res = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${pl.playlistId}&maxResults=50&pageToken=${nextPageToken}`,
-        { headers }
-      );
-      const data = await res.json();
-      
-      if (data.items) {
-        data.items.forEach(item => {
-          allVideos.push({
-            videoId: item.snippet.resourceId.videoId,
-            title: item.snippet.title,
-            channel: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
-            publishedAt: item.snippet.publishedAt
-          });
-        });
-      }
-      nextPageToken = data.nextPageToken || '';
-    } while (nextPageToken);
-  }
+        if (plData.items) {
+          for (const pl of plData.items) {
+            const plTitle = pl.snippet.title.toLowerCase();
+            const matchScore = keywords.filter(k => plTitle.includes(k)).length;
 
-  allVideos.sort((a, b) => new Date(a.publishedAt) - new Date(b.publishedAt));
-
-  const createPlRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,status`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      snippet: {
-        title: targetPlaylistTitle,
-        description: `Chronological Multi-POV playlist created via Playlist Studio for YT.\nSources:\n` +
-          discoveredPlaylists.map(p => `- ${p.channelTitle}: ${p.title}`).join('\n')
-      },
-      status: { privacyStatus: 'unlisted' }
-    })
-  });
-  const createdPlaylist = await createPlRes.json();
-  const masterPlaylistId = createdPlaylist.id;
-
-  for (const vid of allVideos) {
-    await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        snippet: {
-          playlistId: masterPlaylistId,
-          resourceId: {
-            kind: 'youtube#video',
-            videoId: vid.videoId
+            if (matchScore >= 2) {
+              discoveredPlaylists.push({
+                playlistId: pl.id,
+                title: pl.snippet.title,
+                channelTitle: pl.snippet.channelTitle,
+                itemCount: pl.contentDetails.itemCount,
+                matchScore
+              });
+              break;
+            }
           }
         }
-      })
-    });
-  }
+      }
 
-  const syncRecord = {
-    masterPlaylistId,
-    sourcePlaylists: discoveredPlaylists.map(p => p.playlistId),
-    syncedVideoIds: allVideos.map(v => v.videoId),
-    lastSyncTime: new Date().toISOString()
-  };
-  localStorage.setItem(`pov_sync_${masterPlaylistId}`, JSON.stringify(syncRecord));
+      return discoveredPlaylists;
+    }
 
-  return masterPlaylistId;
-}
+    async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistTitle, userAccessToken) {
+      const headers = {
+        Authorization: `Bearer ${userAccessToken}`,
+        'Content-Type': 'application/json'
+      };
+
+      const allVideos = [];
+
+      for (const pl of discoveredPlaylists) {
+        let nextPageToken = '';
+        do {
+          const res = await fetch(
+            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${pl.playlistId}&maxResults=50&pageToken=${nextPageToken}`,
+            { headers }
+          );
+          const data = await res.json();
+          
+          if (data.items) {
+            data.items.forEach(item => {
+              allVideos.push({
+                videoId: item.snippet.resourceId.videoId,
+                title: item.snippet.title,
+                channel: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
+                publishedAt: item.snippet.publishedAt
+              });
+            });
+          }
+          nextPageToken = data.nextPageToken || '';
+        } while (nextPageToken);
+      }
+
+      allVideos.sort((a, b) => new Date(a.publishedAt) - new Date(b.publishedAt));
+
+      const createPlRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,status`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          snippet: {
+            title: targetPlaylistTitle,
+            description: `Chronological Multi-POV playlist created via Playlist Studio for YT.\nSources:\n` +
+              discoveredPlaylists.map(p => `- ${p.channelTitle}: ${p.title}`).join('\n')
+          },
+          status: { privacyStatus: 'unlisted' }
+        })
+      });
+      const createdPlaylist = await createPlRes.json();
+      const masterPlaylistId = createdPlaylist.id;
+
+      for (const vid of allVideos) {
+        await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            snippet: {
+              playlistId: masterPlaylistId,
+              resourceId: {
+                kind: 'youtube#video',
+                videoId: vid.videoId
+              }
+            }
+          })
+        });
+      }
+
+      const syncRecord = {
+        masterPlaylistId,
+        sourcePlaylists: discoveredPlaylists.map(p => p.playlistId),
+        syncedVideoIds: allVideos.map(v => v.videoId),
+        lastSyncTime: new Date().toISOString()
+      };
+      localStorage.setItem(`pov_sync_${masterPlaylistId}`, JSON.stringify(syncRecord));
+
+      return masterPlaylistId;
+    }
     
     function navigateTo(view) {
       toggleDrawer();
@@ -1141,15 +1119,15 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
       openPreviewSheet(pl.id, pl.title, `${pl.count} videos in playlist`, pl.thumb, pl.description, `https://www.youtube.com/playlist?list=${pl.id}`);
     }
 
-      function toggleLibrarySelection(id) {
+    function toggleLibrarySelection(id) {
       selectedLibraryIds.has(id) ? selectedLibraryIds.delete(id) : selectedLibraryIds.add(id);
 
-      const selectAllBtn = document.querySelector("button[onclick*='toggleSelectAllLibrary']") || document.querySelector("span[onclick*='toggleSelectAllLibrary']");
+      const selectAllBtn = document.querySelector("button[onclick*='toggleSelectAllLibrary']");
       if (selectAllBtn) {
         selectAllBtn.textContent = (selectedLibraryIds.size === libraryPlaylists.length && libraryPlaylists.length > 0) ? "Deselect All" : "Select All";
       }
 
-      const nameInput = document.getElementById("combinedTitleInput") || document.querySelector("input[placeholder*='Custom Super Marathon']");
+      const nameInput = document.getElementById("combinedTitleInput");
       if (nameInput) {
         if (selectedLibraryIds.size === 1) {
           const singleId = Array.from(selectedLibraryIds)[0];
@@ -1163,12 +1141,10 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
       renderLibraryPlaylists();
     }
 
-
-
-          function toggleSelectAllLibrary() {
-      const selectAllBtn = document.querySelector("button[onclick*='toggleSelectAllLibrary']") || document.querySelector("span[onclick*='toggleSelectAllLibrary']");
+    function toggleSelectAllLibrary() {
+      const selectAllBtn = document.querySelector("button[onclick*='toggleSelectAllLibrary']");
       const allSelected = libraryPlaylists.length > 0 && selectedLibraryIds.size === libraryPlaylists.length;
-      const nameInput = document.getElementById("combinedTitleInput") || document.querySelector("input[placeholder*='Custom Super Marathon']");
+      const nameInput = document.getElementById("combinedTitleInput");
 
       if (allSelected) {
         selectedLibraryIds.clear();
@@ -1185,11 +1161,9 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
       renderLibraryPlaylists();
     }
 
-
-
     async function combineLibraryPlaylists() {
       if (selectedLibraryIds.size < 1) return alert("Select at least one playlist to combine.");
-        let title = document.getElementById("combinedTitleInput")?.value?.trim() || "";
+      let title = document.getElementById("combinedTitleInput")?.value?.trim() || "";
 
       if (!title) {
         if (selectedLibraryIds.size === 1) {
@@ -1391,8 +1365,8 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
         }
 
         totalCreatorVideosCount = parseInt(currentCreatorData.statistics?.videoCount || 0, 10);
-        document.getElementById("creatorTitle").innerText = currentCreatorData.snippet.title;
-        document.getElementById("creatorAvatar").src = currentCreatorData.snippet.thumbnails?.default?.url || "";
+        document.getElementById("creatorTitle").innerText = currentCreatorData.snippet?.title || "Creator";
+        document.getElementById("creatorAvatar").src = currentCreatorData.snippet?.thumbnails?.default?.url || "";
         document.getElementById("creatorStats").innerText = `${Number(currentCreatorData.statistics?.subscriberCount || 0).toLocaleString()} subscribers • ${totalCreatorVideosCount.toLocaleString()} total videos`;
         document.getElementById("creatorResultsArea").classList.remove("hidden");
 
@@ -1418,18 +1392,30 @@ async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistT
         setStatus("Search error: " + err.message, false);
       }
     }
-function updateCreatorSelectedBadge() {
-  const badge = document.getElementById("creatorSelectedBadge");
-  if (badge) {
-    badge.innerText = `${selectedCreatorItemIds.size} selected`;
-  }
-  const estBar = document.getElementById("quotaEstimatorBar");
-  if (estBar) {
-    // Estimating ~50 units per video if creating/inserting
-    const count = selectedCreatorItemIds.size;
-    estBar.innerHTML = `<span class="text-slate-400">Est. Quota Cost:</span> <span class="font-bold text-purple-300">${count * 50} units (${count} items)</span>`;
-  }
-}
+
+    function toggleCreatorItemSelection(id) {
+      if (selectedCreatorItemIds.has(id)) {
+        selectedCreatorItemIds.delete(id);
+      } else {
+        selectedCreatorItemIds.add(id);
+      }
+      updateCreatorSelectedBadge();
+      renderCreatorList();
+    }
+
+    const toggleCreatorItem = toggleCreatorItemSelection;
+
+    function updateCreatorSelectedBadge() {
+      const badge = document.getElementById("creatorSelectedBadge");
+      if (badge) {
+        badge.innerText = `${selectedCreatorItemIds.size} selected`;
+      }
+      const estBar = document.getElementById("quotaEstimatorBar");
+      if (estBar) {
+        const count = selectedCreatorItemIds.size;
+        estBar.innerHTML = `<span class="text-slate-400">Est. Quota Cost:</span> <span class="font-bold text-purple-300">${count * 50} units (${count} items)</span>`;
+      }
+    }
 
     function setCreatorMode(mode) {
       creatorMode = mode;
@@ -1444,7 +1430,6 @@ function updateCreatorSelectedBadge() {
         document.getElementById("mode-videos").className = "py-2 rounded-lg text-xs font-bold bg-purple-600 text-white";
         document.getElementById("mode-playlists").className = "py-2 rounded-lg text-xs font-bold text-slate-400";
 
-        // Reset videos and page token so old results never stack
         creatorVideos = [];
         nextCreatorVideosPageToken = null;
 
@@ -1522,14 +1507,13 @@ function updateCreatorSelectedBadge() {
         const data = await res.json();
         nextCreatorPlaylistsPageToken = data.nextPageToken || null;
 
-                const rawItems = data.items || [];
-          const kw = (keyword || "").trim().toLowerCase();
-          const items = kw 
-            ? rawItems.filter(p => (p.snippet?.title || "").toLowerCase().includes(kw))
-            : rawItems;
-          creatorPlaylists = creatorPlaylists.concat(items);
-          renderCreatorList();
-
+        const rawItems = data.items || [];
+        const kw = (keyword || "").trim().toLowerCase();
+        const items = kw 
+          ? rawItems.filter(p => (p.snippet?.title || "").toLowerCase().includes(kw))
+          : rawItems;
+        creatorPlaylists = creatorPlaylists.concat(items);
+        renderCreatorList();
 
         nextCreatorPlaylistsPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
         loadMoreBtn.innerText = "⬇️ Load More Playlists (Next 50)";
@@ -1612,18 +1596,16 @@ function updateCreatorSelectedBadge() {
       const sourceItems = isPlMode ? creatorPlaylists : creatorVideos;
 
       const visibleItems = localFilter 
-      ? sourceItems.filter(item => (item.snippet?.title || "").toLowerCase().includes(localFilter))
-
+        ? sourceItems.filter(item => (item.snippet?.title || "").toLowerCase().includes(localFilter))
         : sourceItems;
 
-              const countEl = document.getElementById("contentCountLabel");
-          if (isPlMode) {
-            if (countEl) countEl.innerText = `${creatorPlaylists.length} playlists loaded`;
-          } else {
-            const totalNote = totalCreatorVideosCount ? ` / ${totalCreatorVideosCount.toLocaleString()} total` : "";
-            if (countEl) countEl.innerText = `${creatorVideos.length} videos loaded${totalNote}`;
-          }
-
+      const countEl = document.getElementById("contentCountLabel");
+      if (isPlMode) {
+        if (countEl) countEl.innerText = `${creatorPlaylists.length} playlists loaded`;
+      } else {
+        const totalNote = totalCreatorVideosCount ? ` / ${totalCreatorVideosCount.toLocaleString()} total` : "";
+        if (countEl) countEl.innerText = `${creatorVideos.length} videos loaded${totalNote}`;
+      }
 
       if (!visibleItems.length) {
         list.innerHTML = `<div class="p-3 text-center text-xs text-slate-500">No matching items found.</div>`;
@@ -1635,6 +1617,7 @@ function updateCreatorSelectedBadge() {
         if (!id) return;
 
         const title = item.snippet?.title || "Untitled";
+        const cleanTitle = title.replace(/['"]/g, "");
         const thumb = item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || "";
         const subtitle = isPlMode ? `${item.contentDetails?.itemCount || 0} videos` : "Single Video";
         const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
@@ -1645,202 +1628,201 @@ function updateCreatorSelectedBadge() {
         row.className = `flex flex-col gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
           isChecked ? 'bg-purple-950/30 border-purple-600/70' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
         }`;
-        row.onclick = () => toggleCreatorItem(id);
+        row.onclick = () => toggleCreatorItemSelection(id);
 
         row.innerHTML = `
           <div class="flex items-start gap-3">
-            <input type="checkbox" value="${id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleCreatorItem('${id}')" class="mt-1 rounded border-slate-700 text-purple-600 w-4 h-4 shrink-0 cursor-pointer" />
+            <input type="checkbox" value="${id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleCreatorItemSelection('${id}')" class="mt-1 rounded border-slate-700 text-purple-600 w-4 h-4 shrink-0 cursor-pointer" />
             <img src="${thumb}" onclick="event.stopPropagation(); showCreatorItemDetail('${id}')" class="w-16 h-11 object-cover rounded-lg bg-slate-900 shrink-0 cursor-pointer hover:opacity-80 transition" />
             <div class="flex-1 min-w-0" onclick="event.stopPropagation(); showCreatorItemDetail('${id}')">
               <span class="font-bold text-slate-100 block line-clamp-2 leading-snug">${title}</span>
               <span class="text-[11px] text-slate-500 mt-1 block">${subtitle} ${publishedDate ? '• ' + publishedDate : ''}</span>
             </div>
-                    ${isPlMode ? `
-              <div class="pt-1.5 border-t border-slate-800 flex items-center justify-end gap-2">
-                <button type="button" 
-                  onclick="event.stopPropagation(); scanAndMergeCollabPlaylist('${item.id}', '${(item.snippet?.title || '').replace(/'/g, "\\'")}')" 
-                  class="bg-purple-950/60 hover:bg-purple-900 text-purple-300 border border-purple-800/60 px-2 py-1 rounded-md text-[11px] font-bold active:scale-95 transition flex items-center gap-1 shadow-sm">
-                  <span>✨ Collab Multi-POV</span>
-                </button>
-                <button type="button" 
-                  onclick="event.stopPropagation(); inspectPlaylistVideos('${item.id}', '${(item.snippet?.title || '').replace(/'/g, "\\'")}')" 
-                  class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2 py-1 rounded-md text-[11px] font-semibold active:scale-95 transition flex items-center gap-1">
-                  <span>🔍 Inspect</span>
-                </button>
-              </div>
-            ` : ''}
-          `;
-          list.appendChild(row);
-        });
-      }
-
-  async function scanAndMergeCollabPlaylist(sourcePlaylistId, playlistTitle) {
-  const token = gapi?.client?.getToken?.()?.access_token || tokenClient?.access_token || "";
-  if (!token) {
-    alert("Please sign in with your YouTube account first.");
-    return;
-  }
-
-  setStatus("Scanning playlist for collaborator POVs...", true);
-
-  try {
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=20&playlistId=${sourcePlaylistId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-    const items = data.items || [];
-    if (items.length === 0) throw new Error("No videos found in this playlist.");
-
-    const combinedDesc = items.map(it => it.snippet?.description || "").join(" ");
-    const playlistMatches = Array.from(new Set(
-      (combinedDesc.match(/[?&]list=([a-zA-Z0-9_-]+)/gi) || [])
-        .map(m => m.replace(/[?&]list=/, ""))
-        .filter(id => id !== sourcePlaylistId)
-    ));
-
-    const discoveredPlaylists = [{ id: sourcePlaylistId, title: playlistTitle || "Primary POV" }];
-
-    for (const plId of playlistMatches) {
-      try {
-        const plRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${plId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const plData = await plRes.json();
-        if (plData.items && plData.items.length > 0) {
-          discoveredPlaylists.push({
-            id: plId,
-            title: plData.items[0].snippet.title,
-            channelTitle: plData.items[0].snippet.channelTitle
-          });
-        }
-      } catch (e) {
-        console.warn("Collab playlist fetch skipped:", plId);
-      }
-    }
-
-    if (discoveredPlaylists.length <= 1) {
-      alert("No collaborator series playlists found linked in the video descriptions of this playlist.");
-      setStatus("No linked collaborator playlists found.", false);
-      return;
-    }
-
-    const confirmed = confirm(`Found ${discoveredPlaylists.length} perspectives! Merge all episodes into a chronological master playlist?`);
-    if (!confirmed) {
-      setStatus("Scan cancelled.", false);
-      return;
-    }
-
-    setStatus("Collecting videos across all collaborator playlists...", true);
-
-    let allVideos = [];
-    for (const pl of discoveredPlaylists) {
-      let pToken = "";
-      do {
-        const pRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${pl.id}${pToken ? `&pageToken=${pToken}` : ""}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const pData = await pRes.json();
-        const vids = (pData.items || []).map(v => ({
-          videoId: v.contentDetails?.videoId || v.snippet?.resourceId?.videoId,
-          title: v.snippet?.title,
-          publishedAt: new Date(v.contentDetails?.videoPublishedAt || v.snippet?.publishedAt).getTime(),
-          channelTitle: v.snippet?.videoOwnerChannelTitle || pl.channelTitle || ""
-        }));
-        allVideos.push(...vids);
-        pToken = pData.nextPageToken || "";
-      } while (pToken);
-    }
-
-    const uniqueMap = new Map();
-    allVideos.forEach(v => {
-      if (v.videoId && !uniqueMap.has(v.videoId)) uniqueMap.set(v.videoId, v);
-    });
-    const sortedVideos = Array.from(uniqueMap.values()).sort((a, b) => a.publishedAt - b.publishedAt);
-
-    setStatus("Creating Master Chronological Playlist...", true);
-    const masterTitle = `${playlistTitle || "Collab Series"} [Master Chronological POV]`;
-    const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        snippet: {
-          title: masterTitle,
-          description: `Unified chronological Multi-POV series from: ${discoveredPlaylists.map(p => p.channelTitle || p.title).join(", ")}.`
-        },
-        status: { privacyStatus: "private" }
-      })
-    });
-    const newPl = await createRes.json();
-
-    for (let i = 0; i < sortedVideos.length; i++) {
-      setStatus(`Adding video ${i + 1}/${sortedVideos.length} to master playlist...`, true);
-      await fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          snippet: {
-            playlistId: newPl.id,
-            resourceId: { kind: "youtube#video", videoId: sortedVideos[i].videoId }
-          }
-        })
+          </div>
+          ${isPlMode ? `
+            <div class="pt-1.5 border-t border-slate-800 flex items-center justify-end gap-2">
+              <button type="button" 
+                onclick="event.stopPropagation(); scanAndMergeCollabPlaylist('${id}', '${cleanTitle}')" 
+                class="bg-purple-950/60 hover:bg-purple-900 text-purple-300 border border-purple-800/60 px-2 py-1 rounded-md text-[11px] font-bold active:scale-95 transition flex items-center gap-1 shadow-sm">
+                <span>✨ Collab Multi-POV</span>
+              </button>
+              <button type="button" 
+                onclick="event.stopPropagation(); inspectPlaylistVideos('${id}', '${cleanTitle}')" 
+                class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2 py-1 rounded-md text-[11px] font-semibold active:scale-95 transition flex items-center gap-1">
+                <span>🔍 Inspect</span>
+              </button>
+            </div>
+          ` : ''}
+        `;
+        list.appendChild(row);
       });
-      await new Promise(r => setTimeout(r, 120));
     }
 
-    setStatus(`Master playlist compiled (${sortedVideos.length} videos)!`, false);
-    alert(`Created "${masterTitle}" with ${sortedVideos.length} chronological episodes!`);
-    if (typeof loadMyPlaylists === "function") loadMyPlaylists(true);
-
-  } catch (err) {
-    console.error(err);
-    alert("Collab scan error: " + err.message);
-    setStatus("Collab scan failed.", false);
-  }
-}
-
-
-      function showCreatorItemDetail(id) {
-        const isPlMode = creatorMode === "playlists";
-        if (isPlMode) {
-          const pl = creatorPlaylists.find(p => p.id === id);
-          if (!pl) return;
-          openPreviewSheet(
-            pl.id,
-            pl.snippet?.title || "Playlist",
-            `${currentCreatorData?.snippet?.title || "Creator"} • ${pl.contentDetails?.itemCount || 0} videos`,
-            pl.snippet?.thumbnails?.medium?.url || pl.snippet?.thumbnails?.default?.url || "",
-            pl.snippet?.description || "No description provided.",
-            `https://www.youtube.com/playlist?list=${pl.id}`
-          );
-        } else {
-          const vid = creatorVideos.find(v => (v.snippet?.resourceId?.videoId === id || v.contentDetails?.videoId === id || v.id === id));
-          if (!vid) return;
-          const rawDate = vid.contentDetails?.videoPublishedAt || vid.snippet?.publishedAt || "";
-          const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : "";
-          const vId = vid.contentDetails?.videoId || vid.snippet?.resourceId?.videoId || vid.id;
-          openPreviewSheet(
-            vId,
-            vid.snippet?.title || "Video",
-            `${currentCreatorData?.snippet?.title || "Creator"} • ${dateStr}`,
-            vid.snippet?.thumbnails?.medium?.url || vid.snippet?.thumbnails?.default?.url || "",
-            vid.snippet?.description || "No description provided.",
-            `https://www.youtube.com/watch?v=${vId}`
-          );
-        }
+    async function scanAndMergeCollabPlaylist(sourcePlaylistId, playlistTitle) {
+      const token = accessToken || "";
+      if (!token) {
+        alert("Please sign in with your YouTube account first.");
+        return;
       }
 
+      setStatus("Scanning playlist for collaborator POVs...", true);
 
-      function toggleSelectAllCreatorItems() {
+      try {
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=20&playlistId=${sourcePlaylistId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const items = data.items || [];
+        if (items.length === 0) throw new Error("No videos found in this playlist.");
+
+        const combinedDesc = items.map(it => it.snippet?.description || "").join(" ");
+        const playlistMatches = Array.from(new Set(
+          (combinedDesc.match(/[?&]list=([a-zA-Z0-9_-]+)/gi) || [])
+            .map(m => m.replace(/[?&]list=/, ""))
+            .filter(id => id !== sourcePlaylistId)
+        ));
+
+        const discoveredPlaylists = [{ id: sourcePlaylistId, title: playlistTitle || "Primary POV", channelTitle: currentCreatorData?.snippet?.title || "Primary POV" }];
+
+        for (const plId of playlistMatches) {
+          try {
+            const plRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${plId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const plData = await plRes.json();
+            if (plData.items && plData.items.length > 0) {
+              discoveredPlaylists.push({
+                id: plId,
+                title: plData.items[0].snippet.title,
+                channelTitle: plData.items[0].snippet.channelTitle
+              });
+            }
+          } catch (e) {
+            console.warn("Collab playlist fetch skipped:", plId);
+          }
+        }
+
+        if (discoveredPlaylists.length <= 1) {
+          alert("No collaborator series playlists found linked in the video descriptions of this playlist.");
+          setStatus("No linked collaborator playlists found.", false);
+          return;
+        }
+
+        const confirmed = confirm(`Found ${discoveredPlaylists.length} perspectives! Merge all episodes into a chronological master playlist?`);
+        if (!confirmed) {
+          setStatus("Scan cancelled.", false);
+          return;
+        }
+
+        setStatus("Collecting videos across all collaborator playlists...", true);
+
+        let allVideos = [];
+        for (const pl of discoveredPlaylists) {
+          let pToken = "";
+          do {
+            const pRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${pl.id}${pToken ? `&pageToken=${pToken}` : ""}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const pData = await pRes.json();
+            const vids = (pData.items || []).map(v => ({
+              videoId: v.contentDetails?.videoId || v.snippet?.resourceId?.videoId,
+              title: v.snippet?.title,
+              publishedAt: new Date(v.contentDetails?.videoPublishedAt || v.snippet?.publishedAt).getTime(),
+              channelTitle: v.snippet?.videoOwnerChannelTitle || pl.channelTitle || ""
+            }));
+            allVideos.push(...vids);
+            pToken = pData.nextPageToken || "";
+          } while (pToken);
+        }
+
+        const uniqueMap = new Map();
+        allVideos.forEach(v => {
+          if (v.videoId && !uniqueMap.has(v.videoId)) uniqueMap.set(v.videoId, v);
+        });
+        const sortedVideos = Array.from(uniqueMap.values()).sort((a, b) => a.publishedAt - b.publishedAt);
+
+        setStatus("Creating Master Chronological Playlist...", true);
+        const masterTitle = `${playlistTitle || "Collab Series"} [Master Chronological POV]`;
+        const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            snippet: {
+              title: masterTitle,
+              description: `Unified chronological Multi-POV series from: ${discoveredPlaylists.map(p => p.channelTitle || p.title).join(", ")}.`
+            },
+            status: { privacyStatus: "private" }
+          })
+        });
+        const newPl = await createRes.json();
+
+        for (let i = 0; i < sortedVideos.length; i++) {
+          setStatus(`Adding video ${i + 1}/${sortedVideos.length} to master playlist...`, true);
+          await fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              snippet: {
+                playlistId: newPl.id,
+                resourceId: { kind: "youtube#video", videoId: sortedVideos[i].videoId }
+              }
+            })
+          });
+          await new Promise(r => setTimeout(r, 120));
+        }
+
+        setStatus(`Master playlist compiled (${sortedVideos.length} videos)!`, false);
+        alert(`Created "${masterTitle}" with ${sortedVideos.length} chronological episodes!`);
+        if (typeof loadMyPlaylists === "function") loadMyPlaylists(true);
+
+      } catch (err) {
+        console.error(err);
+        alert("Collab scan error: " + err.message);
+        setStatus("Collab scan failed.", false);
+      }
+    }
+
+    function showCreatorItemDetail(id) {
+      const isPlMode = creatorMode === "playlists";
+      if (isPlMode) {
+        const pl = creatorPlaylists.find(p => p.id === id);
+        if (!pl) return;
+        openPreviewSheet(
+          pl.id,
+          pl.snippet?.title || "Playlist",
+          `${currentCreatorData?.snippet?.title || "Creator"} • ${pl.contentDetails?.itemCount || 0} videos`,
+          pl.snippet?.thumbnails?.medium?.url || pl.snippet?.thumbnails?.default?.url || "",
+          pl.snippet?.description || "No description provided.",
+          `https://www.youtube.com/playlist?list=${pl.id}`
+        );
+      } else {
+        const vid = creatorVideos.find(v => (v.snippet?.resourceId?.videoId === id || v.contentDetails?.videoId === id || v.id === id));
+        if (!vid) return;
+        const rawDate = vid.contentDetails?.videoPublishedAt || vid.snippet?.publishedAt || "";
+        const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : "";
+        const vId = vid.contentDetails?.videoId || vid.snippet?.resourceId?.videoId || vid.id;
+        openPreviewSheet(
+          vId,
+          vid.snippet?.title || "Video",
+          `${currentCreatorData?.snippet?.title || "Creator"} • ${dateStr}`,
+          vid.snippet?.thumbnails?.medium?.url || vid.snippet?.thumbnails?.default?.url || "",
+          vid.snippet?.description || "No description provided.",
+          `https://www.youtube.com/watch?v=${vId}`
+        );
+      }
+    }
+
+    function toggleSelectAllCreatorItems() {
       const isPlMode = creatorMode === "playlists";
       const items = isPlMode ? creatorPlaylists : creatorVideos;
       const allSelected = items.length > 0 && items.every(item => {
-        const id = isPlMode ? item.id : (item.id?.videoId || item.id);
+        const id = isPlMode ? item.id : (item.id?.videoId || item.snippet?.resourceId?.videoId || item.contentDetails?.videoId || item.id);
         return selectedCreatorItemIds.has(id);
       });
 
@@ -1851,32 +1833,31 @@ function updateCreatorSelectedBadge() {
         if (selectBtn) selectBtn.textContent = "Select All";
       } else {
         items.forEach(item => {
-          const id = isPlMode ? item.id : (item.id?.videoId || item.id);
+          const id = isPlMode ? item.id : (item.id?.videoId || item.snippet?.resourceId?.videoId || item.contentDetails?.videoId || item.id);
           if (id) selectedCreatorItemIds.add(id);
         });
         if (selectBtn) selectBtn.textContent = "Deselect All";
       }
-      const creatorTitleInput = document.getElementById("creatorCustomTitleInput");
+      const creatorTitleInput = document.getElementById("creatorNewPlaylistTitle");
       if (creatorTitleInput) creatorTitleInput.value = "";
 
       renderCreatorList();
       updateCreatorSelectedBadge();
     }
 
-
     async function saveCreatorSelectionToPlaylist() {
       if (selectedCreatorItemIds.size < 1) return alert("Select at least one item.");
-          let title = document.getElementById("creatorCustomTitleInput")?.value?.trim() || "";
+      let title = document.getElementById("creatorNewPlaylistTitle")?.value?.trim() || "";
 
       if (!title) {
         const isPlMode = creatorMode === "playlists";
         const items = isPlMode ? creatorPlaylists : creatorVideos;
         if (selectedCreatorItemIds.size === 1) {
           const singleId = Array.from(selectedCreatorItemIds)[0];
-          const found = items.find(item => (isPlMode ? item.id : (item.id?.videoId || item.id)) === singleId);
-          title = found ? `${found.title || found.snippet?.title} (Chronological)` : "Creator Playlist";
-        } else if (currentCreatorData?.title) {
-          title = `${currentCreatorData.title} Compilation`;
+          const found = items.find(item => (isPlMode ? item.id : (item.snippet?.resourceId?.videoId || item.contentDetails?.videoId || item.id)) === singleId);
+          title = found ? `${found.snippet?.title || found.title || "Creator Item"} (Chronological)` : "Creator Playlist";
+        } else if (currentCreatorData?.snippet?.title) {
+          title = `${currentCreatorData.snippet.title} Compilation`;
         } else {
           title = "Curated Marathon";
         }
@@ -2100,6 +2081,7 @@ function updateCreatorSelectedBadge() {
         return false;
       }
     }
+
     // ================= SEQUENCE STUDIO TOOLS =================
     function sortCreatorItemsChrono(ascending = true) {
       const list = creatorMode === "playlists" ? creatorPlaylists : creatorVideos;
@@ -2163,7 +2145,6 @@ function updateCreatorSelectedBadge() {
       updateCreatorSelectedBadge();
       alert(`Stripped ${removed} item(s) matching "${term}".`);
     }
-    
   </script>
 </body>
 </html>

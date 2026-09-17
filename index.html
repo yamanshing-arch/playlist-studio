@@ -20,7 +20,7 @@
           Playlist Studio for YT
         </h1>
         <p class="text-xs text-slate-400 leading-relaxed">
-          The power-tool YouTube never gave you. Merge playlists, organize creator series in chronological order, and binge uninterrupted.
+          The power-tool YouTube never gave you. Merge playlists, sync multi-perspective collaborator series, sort in chronological order, and binge uninterrupted.
         </p>
       </div>
 
@@ -37,6 +37,13 @@
           <div>
             <span class="font-bold text-slate-200 block">Chronological Episode Order</span>
             <span class="text-[11px] text-slate-400">Fix reverse autoplay so Episode 1 plays before Episode 2.</span>
+          </div>
+        </div>
+        <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl flex items-start gap-3">
+          <span class="text-base p-1 bg-purple-950/60 rounded-md border border-purple-800/40">✨</span>
+          <div>
+            <span class="font-bold text-slate-200 block">Collab Multi-POV Sync</span>
+            <span class="text-[11px] text-slate-400">Scan video descriptions to detect and merge collaborator viewpoints chronologically.</span>
           </div>
         </div>
         <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl flex items-start gap-3">
@@ -130,7 +137,7 @@
       <button onclick="openAboutModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-purple-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition">
         <span>ℹ️</span> About & Credits
       </button>
-      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.3</div>
+      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.4</div>
     </div>
   </div>
 
@@ -184,7 +191,7 @@
 
       <div class="space-y-3 leading-relaxed">
         <p class="text-slate-300">
-          By default, the YouTube Data API provides <strong>10,000 units/day</strong> per project. Adding one video costs 50 units (~200 videos total). Use your own project to get an isolated quota pool or request an increase to 100,000 units.
+          By default, the YouTube Data API provides <strong>10,000 units/day</strong> per project. Reading and searching playlists costs almost zero (1 unit per 50 videos), while inserting a video costs 50 units (~200 videos total per day). Use your own project to get an isolated quota pool or request an increase to 100,000 units.
         </p>
 
         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
@@ -206,7 +213,7 @@
             <li>Filter for <strong>YouTube Data API v3</strong> and find <strong>Queries per day</strong>.</li>
             <li>Click <strong>Edit Quotas</strong> and apply for a higher quota limit.</li>
             <li>Request <strong>100,000</strong> units.</li>
-            <li>Describe the use case: <em>"Personal playlist marathon organizer creating sequential and episodic series."</em></li>
+            <li>Describe the use case: <em>"Personal marathon and multi-perspective collaboration organizer combining chronological series and creator viewpoints."</em></li>
           </ol>
         </div>
       </div>
@@ -228,13 +235,14 @@
       <div class="space-y-3 text-xs text-slate-300 text-left leading-relaxed">
         <div>
           <p class="font-bold text-slate-100 mb-1">💡 Why was this created?</p>
-          <p class="text-slate-400">YouTube does not allow users to combine multiple playlists or sort video runs chronologically into proper episode binge orders. Playlist Studio eliminates that friction, letting you organize, filter, deduplicate, and sort playlist marathons straight to your personal YouTube account.</p>
+          <p class="text-slate-400">YouTube does not allow users to combine multiple playlists, sort video runs chronologically into proper binge orders, or merge cross-channel multiplayer POV perspectives. Playlist Studio eliminates that friction, letting you organize, filter, deduplicate, and compile sequential marathons straight to your personal YouTube account.</p>
         </div>
 
         <div>
           <p class="font-bold text-slate-100 mb-1">⚡ Core Capabilities</p>
           <ul class="list-disc list-inside space-y-1 text-slate-400">
-            <li><strong class="text-slate-300">Intelligent Ordering:</strong> Sort collections by release date so series play in chronological story order.</li>
+            <li><strong class="text-slate-300">Intelligent Ordering:</strong> Sort collections by release date so episodic series play in chronological order.</li>
+            <li><strong class="text-slate-300">Collab POV Detection:</strong> Cross-references collaborator links in video descriptions to weave alternating viewpoints into a single master marathon.</li>
             <li><strong class="text-slate-300">Delta Sync:</strong> Check linked source playlists for newly uploaded videos and append only the new episodes without regenerating.</li>
             <li><strong class="text-slate-300">Automatic Batch Splitting:</strong> Automatically sections oversized marathons into sequential Part 1, Part 2, etc.</li>
             <li><strong class="text-slate-300">Quota Guard:</strong> Real-time cost estimation and safety controls protect your daily YouTube quota limits.</li>
@@ -272,7 +280,7 @@
 
         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
           <p class="font-bold text-cyan-300 text-[11px] uppercase">2. Episode Binging & Chronological Order</p>
-          <p class="text-slate-400">YouTube channels often autoplay backwards. Use the <strong>📅 1-9 Oldest</strong> button in the Creator Explorer to arrange series from the very first episode to the latest, ensuring continuous chronological playback.</p>
+          <p class="text-slate-400">YouTube channels often autoplay backwards. Use the <strong>📅 1-9 Oldest</strong> button in the Creator Explorer to arrange series from the first episode to the latest. <em class="text-slate-300">Tip:</em> If a series has more than 50 episodes, click <strong>Load More Episodes</strong> until all are loaded before clicking 1-9 Oldest to sort the entire series chronologically.</p>
         </div>
 
         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
@@ -285,7 +293,12 @@
         </div>
 
         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
-          <p class="font-bold text-emerald-300 text-[11px] uppercase">4. Smart Delta Sync</p>
+          <p class="font-bold text-fuchsia-300 text-[11px] uppercase">4. ✨ Collab Multi-POV Series Sync</p>
+          <p class="text-slate-400">When gaming groups record multiplayer sessions, click the <strong>✨ Collab Multi-POV</strong> button on any playlist card. The app inspects video descriptions, discovers collaborator playlist links, and merges all perspectives into a unified chronological master series.</p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+          <p class="font-bold text-emerald-300 text-[11px] uppercase">5. Smart Delta Sync</p>
           <p class="text-slate-400">Playlists created here are linked to their sources. When a creator uploads new episodes, tap <strong>🔄 Check for New Videos</strong> in your library to append only the newest uploads—saving API quota without remaking the entire list.</p>
         </div>
       </div>

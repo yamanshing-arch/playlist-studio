@@ -211,7 +211,7 @@
       <button onclick="openAboutModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-purple-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition">
         <span>ℹ️</span> About & Credits
       </button>
-      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.5</div>
+      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.6</div>
     </div>
   </div>
 
@@ -649,6 +649,30 @@
         </p>
       </div>
 
+      <!-- Beta / VIP Promo Code Redemption Box -->
+      <div class="p-3.5 bg-slate-900/90 border border-purple-800/40 rounded-2xl space-y-2.5 shadow-md">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+            <span>🎟️</span> Have a VIP or Beta Promo Code?
+          </span>
+          <span class="text-[10px] text-slate-500">Friends & Family Testing</span>
+        </div>
+        <div class="flex gap-2">
+          <input 
+            id="promoCodeInput" 
+            type="text" 
+            placeholder="Enter Code (e.g. Yaman246)" 
+            class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono uppercase focus:outline-none focus:border-purple-500 placeholder:text-slate-600"
+          />
+          <button onclick="redeemPromoCode()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition active:scale-95 shadow">
+            Apply Pass
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-400">
+          Unlocks 30 days of Full Studio Access (50 vids/batch, auto batch splitting, Delta Sync).
+        </p>
+      </div>
+
       <!-- Real-Time Quota & Playlist Capacity Engine -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
         <div class="flex items-center justify-between">
@@ -789,6 +813,9 @@
     const DEFAULT_CLIENT_ID = "1061284018846-i3rj1351g3n538k0h5cpjfote8nc9ihm.apps.googleusercontent.com";
     let activeClientId = localStorage.getItem("custom_yt_client_id") || DEFAULT_CLIENT_ID;
     
+    // Developer Email List for Auto-VIP Lifetime Access
+    const DEVELOPER_EMAILS = ["yamanshing@gmail.com", "yamansiingh2000@gmail.com"];
+
     let accessToken = null;
     let tokenClient;
     let isMergeCancelled = false;
@@ -817,11 +844,15 @@
       starter: { maxPlaylistsPerDay: 2, maxVideosPerBatch: 20, name: "Starter Free" },
       monthly: { maxPlaylistsPerDay: 50, maxVideosPerBatch: 50, name: "1-Month Pass" },
       quarterly: { maxPlaylistsPerDay: 50, maxVideosPerBatch: 50, name: "Quarterly Pass" },
-      annual: { maxPlaylistsPerDay: 100, maxVideosPerBatch: 50, name: "Annual VIP" }
+      annual: { maxPlaylistsPerDay: 100, maxVideosPerBatch: 50, name: "Annual VIP" },
+      developer: { maxPlaylistsPerDay: 1000, maxVideosPerBatch: 50, name: "Developer VIP (Lifetime)" }
     };
 
     window.addEventListener("DOMContentLoaded", () => {
-      // Check First-Run Onboarding
+      // 1. Direct Invite Link Detection (?promo=Yaman246)
+      checkDirectInviteUrl();
+
+      // 2. Check First-Run Onboarding
       if (!localStorage.getItem("ps_has_onboarded")) {
         document.getElementById("onboardingModal").classList.remove("hidden");
       }
@@ -844,11 +875,113 @@
         document.getElementById("authGateScreen").classList.add("hidden");
         updateSessionUI(true);
         setStatus("Restored session successfully.", false);
+        checkDeveloperAccountStatus();
         loadMyPlaylists(true);
       } else if (cachedToken) {
         disconnectAccount(false);
       }
     });
+
+    // ================= PROMO CODE & DIRECT INVITE ENGINE =================
+    // Base64 hash for "Yaman246"
+    const PROMO_HASH = "WWFtYW4yNDY=";
+
+    function isPromoWindowActive() {
+      // Seasonal Windows:
+      // Window 1: Aug 15 to Sep 30 (Late Summer)
+      // Window 2: Dec 20 to Jan 15 (Holiday Binge)
+      const now = new Date();
+      const m = now.getMonth(); // 0-indexed: 0=Jan, 7=Aug, 8=Sep, 11=Dec
+      const d = now.getDate();
+
+      const isLateSummer = (m === 7 && d >= 15) || m === 8;
+      const isYearEnd = (m === 11 && d >= 20) || (m === 0 && d <= 15);
+      
+      // Also active during testing/launch period
+      const isLaunchWindow = true; 
+
+      return isLateSummer || isYearEnd || isLaunchWindow;
+    }
+
+    function checkDirectInviteUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const promoQuery = urlParams.get('promo');
+      if (promoQuery) {
+        if (btoa(promoQuery.trim()) === PROMO_HASH) {
+          applyPromoPass(true);
+          // Remove query param cleanly from URL bar without page reload
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      }
+    }
+
+    function redeemPromoCode() {
+      const input = document.getElementById("promoCodeInput");
+      const val = (input?.value || "").trim();
+
+      if (!val) {
+        alert("Please enter a valid promo code.");
+        return;
+      }
+
+      if (btoa(val) !== PROMO_HASH) {
+        alert("Invalid promo code. Please check for spelling mistakes.");
+        return;
+      }
+
+      applyPromoPass(false);
+      if (input) input.value = "";
+    }
+
+    function applyPromoPass(fromDirectUrl = false) {
+      if (!isPromoWindowActive()) {
+        alert("This promotional window is currently closed. Next seasonal VIP access opens during summer and year-end holidays.");
+        return;
+      }
+
+      // Check anti-exploitation one-time redemption per device
+      if (localStorage.getItem("ps_promo_redeemed_yaman246")) {
+        alert("This VIP testing pass has already been redeemed on this browser.");
+        return;
+      }
+
+      const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 Days Pass
+      localStorage.setItem("ps_user_plan", JSON.stringify({ plan: "monthly", expiresAt: expiry, isTesterPass: true }));
+      localStorage.setItem("ps_promo_redeemed_yaman246", "true");
+      localStorage.setItem("ps_has_onboarded", "true");
+      
+      const onboardModal = document.getElementById("onboardingModal");
+      if (onboardModal) onboardModal.classList.add("hidden");
+
+      initSubscriptionState();
+
+      if (fromDirectUrl) {
+        alert("🎉 VIP Beta Pass Activated!\n\nWelcome! You have received 30 days of Full Studio Access with high batch capacity & Smart Delta Sync.");
+      } else {
+        alert("🎉 Code Accepted! You have unlocked 30 days of Full Studio Access!");
+      }
+    }
+
+    // ================= DEVELOPER ACCOUNT RECOGNITION =================
+    async function checkDeveloperAccountStatus() {
+      if (!accessToken) return;
+      try {
+        const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (res.ok) {
+          const user = await res.json();
+          if (user.email && DEVELOPER_EMAILS.includes(user.email.toLowerCase())) {
+            // Permanently activate Developer VIP status
+            localStorage.setItem("ps_user_plan", JSON.stringify({ plan: "developer", expiresAt: null, email: user.email }));
+            initSubscriptionState();
+          }
+        }
+      } catch (e) {
+        console.warn("Could not check developer email status:", e);
+      }
+    }
 
     // ================= ONBOARDING CAROUSEL =================
     let currentOnboardSlide = 1;
@@ -940,7 +1073,7 @@
       const daysLeftLabel = document.getElementById("planDaysLeft");
       if (daysLeftLabel) {
         if (!sub.expiresAt) {
-          daysLeftLabel.innerText = "Lifetime Free Access";
+          daysLeftLabel.innerText = planKey === "developer" ? "Permanent Developer Access" : "Lifetime Free Access";
           daysLeftLabel.className = "text-xs text-emerald-400 font-medium";
         } else {
           const diffMs = sub.expiresAt - Date.now();
@@ -1426,7 +1559,7 @@
     function initTokenClient() {
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: activeClientId,
-        scope: "https://www.googleapis.com/auth/youtube",
+        scope: "https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/userinfo.email",
         callback: (resp) => {
           if (resp.error) {
             document.getElementById("authGateStatus").innerText = "Error: " + resp.error;
@@ -1442,6 +1575,7 @@
           document.getElementById("authGateScreen").classList.add("hidden");
           updateSessionUI(true);
           setStatus("Connected successfully!", false);
+          checkDeveloperAccountStatus();
           loadMyPlaylists(true);
         },
       });

@@ -9,8 +9,78 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col antialiased selection:bg-purple-500 selection:text-white pb-16">
 
+  <!-- ================= FIRST-RUN ONBOARDING MODAL ================= -->
+  <div id="onboardingModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-md w-full rounded-2xl p-6 text-center space-y-5 shadow-2xl">
+      <!-- Slide 1 -->
+      <div id="onboard-slide-1" class="space-y-4">
+        <div class="w-14 h-14 bg-gradient-to-tr from-red-600 via-pink-600 to-purple-600 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-lg shadow-purple-950/50">
+          🎬
+        </div>
+        <div>
+          <h2 class="text-lg font-black text-slate-100">Welcome to Playlist Studio</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            The power-tool built to fix reverse autoplay, combine scattered playlists, and weave multi-POV creator series into uninterrupted chronological order.
+          </p>
+        </div>
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-left text-xs space-y-2 text-slate-300">
+          <p class="flex items-center gap-2"><span class="text-purple-400 font-bold">✓</span> Chronological episode sorting (Episode 1 before Episode 2)</p>
+          <p class="flex items-center gap-2"><span class="text-purple-400 font-bold">✓</span> Multi-perspective gaming collab scan and merge</p>
+          <p class="flex items-center gap-2"><span class="text-purple-400 font-bold">✓</span> Smart delta updates when creators post new uploads</p>
+        </div>
+      </div>
+
+      <!-- Slide 2 -->
+      <div id="onboard-slide-2" class="space-y-4 hidden">
+        <div class="w-14 h-14 bg-purple-950/70 border border-purple-800 rounded-2xl mx-auto flex items-center justify-center text-2xl">
+          🔑
+        </div>
+        <div>
+          <h2 class="text-lg font-black text-slate-100">Guest Mode or Full Sync</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            You can search creators, inspect playlists, and arrange sequences as a <strong>Guest</strong> anytime. When you want to save playlists straight into your YouTube library, simply connect your account.
+          </p>
+        </div>
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-left text-xs space-y-2 text-slate-400">
+          <p><strong class="text-slate-200">Free Starter Tier:</strong> Create up to 2 playlists every day with up to 20 videos each at zero cost.</p>
+          <p><strong class="text-purple-300">Full Studio Access:</strong> Upgrade to compile large batches up to 50 items and automate delta series updates.</p>
+        </div>
+      </div>
+
+      <!-- Slide 3 -->
+      <div id="onboard-slide-3" class="space-y-4 hidden">
+        <div class="w-14 h-14 bg-emerald-950/70 border border-emerald-800 rounded-2xl mx-auto flex items-center justify-center text-2xl">
+          ⚡
+        </div>
+        <div>
+          <h2 class="text-lg font-black text-slate-100">Isolated Quota Freedom</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            YouTube grants 10,000 quota units per day. Whether you use our Free tier or a Pass, you can plug in your personal Google Cloud Client ID anytime to claim your own 10k–100k daily unit pool.
+          </p>
+        </div>
+        <div class="p-3 bg-emerald-950/30 border border-emerald-800/40 rounded-xl text-left text-xs text-emerald-300 space-y-1">
+          <p class="font-bold">✨ Complete Privacy Guarantee</p>
+          <p class="text-[11px] text-slate-400">Tokens never leave your device. All API requests happen directly from your local browser to YouTube.</p>
+        </div>
+      </div>
+
+      <!-- Carousel Controls -->
+      <div class="flex items-center justify-between pt-2">
+        <div class="flex gap-1.5" id="onboardDots">
+          <span class="w-2.5 h-1.5 rounded-full bg-purple-500"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="skipOnboarding()" class="px-3 py-1.5 text-slate-400 hover:text-white text-xs font-semibold">Skip</button>
+          <button id="onboardNextBtn" onclick="nextOnboardingSlide()" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= AUTH GATE SCREEN ================= -->
-  <div id="authGateScreen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
+  <div id="authGateScreen" class="fixed inset-0 bg-slate-950 z-40 flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
     <div class="max-w-sm w-full space-y-6 my-auto">
       <div class="space-y-2">
         <div class="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-tr from-red-600 via-pink-600 to-purple-600 rounded-2xl shadow-xl shadow-purple-950/40 border border-purple-500/20">
@@ -24,7 +94,7 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-1 gap-2.5 text-left text-xs">
+      <div class="grid grid-cols-1 gap-2 text-left text-xs">
         <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl flex items-start gap-3">
           <span class="text-base p-1 bg-purple-950/60 rounded-md border border-purple-800/40">📂</span>
           <div>
@@ -43,22 +113,19 @@
           <span class="text-base p-1 bg-purple-950/60 rounded-md border border-purple-800/40">✨</span>
           <div>
             <span class="font-bold text-slate-200 block">Collab Multi-POV Sync</span>
-            <span class="text-[11px] text-slate-400">Scan video descriptions to detect and merge collaborator viewpoints chronologically.</span>
-          </div>
-        </div>
-        <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl flex items-start gap-3">
-          <span class="text-base p-1 bg-emerald-950/60 rounded-md border border-emerald-800/40">🔄</span>
-          <div>
-            <span class="font-bold text-slate-200 block">Smart Delta Sync</span>
-            <span class="text-[11px] text-slate-400">Add newly uploaded episodes to existing playlists with minimal quota.</span>
+            <span class="text-[11px] text-slate-400">Detect and merge collaborator viewpoints chronologically.</span>
           </div>
         </div>
       </div>
 
-      <div class="space-y-3 pt-1">
+      <div class="space-y-2.5 pt-1">
         <button onclick="handleAuth()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold py-3.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 active:scale-[0.99] transition">
           <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
           <span>Connect with YouTube</span>
+        </button>
+
+        <button onclick="enterGuestMode()" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition active:scale-[0.99]">
+          <span>👀</span> Browse as Guest (Explorer Only)
         </button>
         <div id="authGateStatus" class="text-[11px] font-mono text-slate-500">Secure authorization via Google Identity</div>
       </div>
@@ -75,7 +142,7 @@
         <a href="http://www.google.com/policies/privacy" target="_blank" class="text-indigo-400 underline">Google Privacy Policy</a>.
       </p>
       <p class="pt-1">
-        <a href="#privacy" onclick="alert('Playlist Studio for YT does not store, collect, or share your personal data or YouTube credentials on external servers. Authentication tokens are stored locally in your browser session and can be cleared at any time via Disconnect Account or by revoking access via Google Security Settings.');" class="text-indigo-400 underline">Privacy Notice</a>
+        <a href="#privacy" onclick="alert('Playlist Studio for YT does not store, collect, or share your personal data or YouTube credentials on external servers. Authentication tokens are stored locally in your browser session and can be cleared at any time.');" class="text-indigo-400 underline">Privacy Notice</a>
         &bull;
         <a href="https://myaccount.google.com/permissions" target="_blank" class="text-indigo-400 underline">Google Security Settings (Revoke Access)</a>
       </p>
@@ -98,6 +165,10 @@
         <button onclick="navigateTo('search')" id="nav-search" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 flex items-center gap-3">
           <span>🔍</span> Creator Search Explorer
         </button>
+        <button onclick="navigateTo('plans')" id="nav-plans" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-amber-300 hover:bg-slate-800 flex items-center justify-between">
+          <span class="flex items-center gap-3"><span>⭐</span> Plans & Quota Monitor</span>
+          <span id="drawerPlanBadge" class="text-[10px] bg-amber-950 text-amber-400 border border-amber-800/60 px-1.5 py-0.5 rounded font-bold uppercase">Free</span>
+        </button>
       </nav>
 
       <!-- Custom Client ID & Setup Guide -->
@@ -114,17 +185,20 @@
           <button onclick="saveCustomClientId()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 rounded-lg text-[11px] transition">Save & Apply</button>
           <button onclick="resetCustomClientId()" class="px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-lg transition">Reset</button>
         </div>
+        <p class="text-[10px] text-slate-500 pt-1">
+          Need interactive setup help? <button onclick="openGeminiGuidePrompt()" class="text-purple-400 underline">Ask Gemini AI ↗</button>
+        </p>
       </div>
 
       <div class="pt-4 border-t border-slate-800 space-y-3">
         <h3 class="text-xs font-black uppercase tracking-wider text-slate-400">Account Session</h3>
-        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-          <div class="text-[11px] text-emerald-400 flex items-center gap-1.5 font-medium">
+        <div id="drawerSessionCard" class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+          <div id="drawerSessionStatus" class="text-[11px] text-emerald-400 flex items-center gap-1.5 font-medium">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Auto-Login Session Active
           </div>
-          <p class="text-[10px] text-slate-500">Your token is preserved across browser reloads.</p>
+          <p id="drawerSessionSub" class="text-[10px] text-slate-500">Your token is preserved across browser reloads.</p>
         </div>
-        <button onclick="disconnectAccount(false)" class="w-full bg-rose-950/40 hover:bg-rose-900 border border-rose-800/80 text-rose-300 text-xs py-2 rounded-lg font-semibold transition">
+        <button id="drawerAuthBtn" onclick="disconnectAccount(false)" class="w-full bg-rose-950/40 hover:bg-rose-900 border border-rose-800/80 text-rose-300 text-xs py-2 rounded-lg font-semibold transition">
           Disconnect Account
         </button>
       </div>
@@ -137,11 +211,11 @@
       <button onclick="openAboutModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-purple-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition">
         <span>ℹ️</span> About & Credits
       </button>
-      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.4</div>
+      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.5</div>
     </div>
   </div>
 
-  <!-- ================= ITEM PREVIEW BOTTOM SHEET (UNIFIED) ================= -->
+  <!-- ================= ITEM PREVIEW BOTTOM SHEET ================= -->
   <div id="previewSheetOverlay" class="fixed inset-0 bg-black/70 z-50 hidden backdrop-blur-sm transition-opacity" onclick="closePreviewSheet()"></div>
   <div id="previewSheet" class="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 rounded-t-2xl z-50 p-4 max-h-[85vh] overflow-y-auto transform translate-y-full transition-transform duration-300 max-w-lg mx-auto shadow-2xl space-y-4">
     <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-2 cursor-pointer" onclick="closePreviewSheet()"></div>
@@ -158,7 +232,6 @@
       <p id="previewExtra" class="text-xs text-slate-400 whitespace-pre-line leading-relaxed"></p>
     </div>
 
-    <!-- Multi-POV Discovery Section -->
     <div class="w-full space-y-2">
       <button 
         type="button" 
@@ -170,7 +243,6 @@
       <div id="previewPovContainer"></div>
     </div>
 
-    <!-- Actions -->
     <div class="grid grid-cols-2 gap-2 pt-1">
       <a id="previewWatchBtn" target="_blank" href="#" class="text-center py-2.5 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition active:scale-95 shadow-sm flex items-center justify-center gap-1.5">
         <span>▶</span> Watch on YouTube
@@ -191,17 +263,37 @@
 
       <div class="space-y-3 leading-relaxed">
         <p class="text-slate-300">
-          By default, the YouTube Data API provides <strong>10,000 units/day</strong> per project. Reading and searching playlists costs almost zero (1 unit per 50 videos), while inserting a video costs 50 units (~200 videos total per day). Use your own project to get an isolated quota pool or request an increase to 100,000 units.
+          YouTube Data API provides <strong>10,000 units/day</strong> per project. Reading/searching playlists costs almost zero (1 unit per 50 videos), while inserting a video into your library costs 50 units (~200 videos total per day). Setting up your own project provides an isolated quota pool.
         </p>
+
+        <!-- AI Assistant Banner -->
+        <div class="p-3 bg-gradient-to-r from-purple-950/70 to-indigo-950/70 rounded-xl border border-purple-800/60 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-purple-300 text-[11px] flex items-center gap-1.5">
+              <span>🤖</span> Interactive Gemini Setup Assistant
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-300">
+            Want step-by-step guidance through Google Cloud? Click below to have Gemini guide you with exact instructions tailored for Playlist Studio.
+          </p>
+          <div class="flex gap-2">
+            <button onclick="openGeminiGuidePrompt()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 rounded-lg text-[11px] transition">
+              💬 Launch Gemini Assistant ↗
+            </button>
+            <button onclick="copyGeminiPrompt()" class="px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-lg transition" title="Copy Prompt">
+              📋 Copy Prompt
+            </button>
+          </div>
+        </div>
 
         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
           <p class="font-bold text-purple-300 text-[11px] uppercase tracking-wide">Step 1: Create OAuth Client ID</p>
           <ol class="list-decimal list-inside space-y-1 text-slate-400 text-[11px]">
             <li>Open the <a href="https://console.cloud.google.com/" target="_blank" class="text-purple-400 underline">Google Cloud Console</a> and create a project.</li>
             <li>Go to <strong>APIs & Services → Library</strong>, find <strong>YouTube Data API v3</strong>, and click <strong>Enable</strong>.</li>
-            <li>Under <strong>OAuth consent screen</strong>, select <strong>External</strong>, complete the required details, and add your email under <strong>Test users</strong>.</li>
+            <li>Under <strong>OAuth consent screen</strong>, select <strong>External</strong>, complete the details, and add your email under <strong>Test users</strong>.</li>
             <li>Go to <strong>Credentials → Create Credentials → OAuth client ID</strong>.</li>
-            <li>Select <strong>Web application</strong>. Under <strong>Authorized JavaScript origins</strong>, add this site's exact URL.</li>
+            <li>Select <strong>Web application</strong>. Under <strong>Authorized JavaScript origins</strong>, add this site's exact root origin (e.g. <code>https://yamanshing-arch.github.io</code> without trailing slash).</li>
             <li>Copy the <strong>Client ID</strong>, paste it into the drawer menu, and click <strong>Save & Apply</strong>.</li>
           </ol>
         </div>
@@ -211,8 +303,7 @@
           <ol class="list-decimal list-inside space-y-1 text-slate-400 text-[11px]">
             <li>In Google Cloud Console, navigate to <strong>IAM & Admin → Quotas & System Limits</strong>.</li>
             <li>Filter for <strong>YouTube Data API v3</strong> and find <strong>Queries per day</strong>.</li>
-            <li>Click <strong>Edit Quotas</strong> and apply for a higher quota limit.</li>
-            <li>Request <strong>100,000</strong> units.</li>
+            <li>Click <strong>Edit Quotas</strong>, select <strong>100,000</strong> units.</li>
             <li>Describe the use case: <em>"Personal marathon and multi-perspective collaboration organizer combining chronological series and creator viewpoints."</em></li>
           </ol>
         </div>
@@ -356,9 +447,15 @@
       <button onclick="toggleDrawer()" class="text-slate-200 hover:text-white p-1 rounded-md active:bg-slate-800 text-lg">☰</button>
       <h1 id="screenTitle" class="text-sm font-bold text-slate-200">My Library</h1>
     </div>
-    <span class="text-[11px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
-      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Connected
-    </span>
+    
+    <div class="flex items-center gap-2">
+      <button onclick="navigateTo('plans')" class="text-[11px] bg-purple-950 hover:bg-purple-900 text-purple-300 border border-purple-800 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 transition">
+        <span>⭐</span> <span id="headerPlanText">Free Tier</span>
+      </button>
+      <span id="headerConnectionBadge" class="text-[11px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Connected
+      </span>
+    </div>
   </header>
 
   <!-- ================= MAIN CONTAINER ================= -->
@@ -535,6 +632,150 @@
       </div>
     </section>
 
+    <!-- VIEW 3: DEDICATED PLANS, BILLING & QUOTA DASHBOARD -->
+    <section id="view-plans" class="hidden space-y-4 text-left">
+      <!-- Active Status Header -->
+      <div class="bg-gradient-to-tr from-purple-950/60 to-slate-900 border border-purple-800/50 rounded-2xl p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold tracking-wider uppercase text-purple-400">Current Plan Status</span>
+          <span id="planStatusTag" class="text-[10px] font-bold bg-purple-900/60 border border-purple-700/60 text-purple-200 px-2 py-0.5 rounded-full uppercase">Starter Free</span>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <h2 id="planDisplayName" class="text-xl font-black text-slate-100">Starter Free Tier</h2>
+          <span id="planDaysLeft" class="text-xs text-emerald-400 font-medium">Lifetime Free Access</span>
+        </div>
+        <p id="planDescNote" class="text-xs text-slate-400 leading-relaxed">
+          Includes up to 2 created playlists per day (capped at 20 videos each) with full Multi-POV scan & chronological sequencing.
+        </p>
+      </div>
+
+      <!-- Real-Time Quota & Playlist Capacity Engine -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+            <span>⚡</span> YouTube API Quota & Capacity
+          </h3>
+          <span id="quotaPoolTag" class="text-[10px] font-mono text-purple-300 bg-purple-950 px-2 py-0.5 rounded border border-purple-800/60">Standard 10k Pool</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-slate-400">Daily Units Remaining:</span>
+            <span id="quotaUnitDisplay" class="font-bold text-purple-300">~10,000 / 10,000</span>
+          </div>
+          <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+            <div id="quotaBarFill" class="bg-gradient-to-r from-purple-500 to-emerald-400 h-2 rounded-full" style="width: 100%"></div>
+          </div>
+        </div>
+
+        <!-- Real-World Math Translation -->
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+          <p class="font-bold text-slate-300">📊 What can you create today?</p>
+          <p id="quotaCapacityText" class="text-[11px] text-slate-400 leading-relaxed">
+            Sufficient quota to create <strong>~9 new playlists</strong> (with 20 videos each) or <strong>1 large marathon</strong> containing up to <strong>190 videos</strong>.
+          </p>
+          <div class="pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-500">
+            <span>Quota Resets in: <strong id="quotaResetTimer" class="text-slate-300 font-mono">--:--:--</strong></span>
+            <span>(Midnight PST)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscription Tiers Grid -->
+      <div class="space-y-3">
+        <h3 class="text-xs font-bold text-purple-300 uppercase tracking-wide">Choose Full Studio Access</h3>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Upgrade your in-app curation tools to unlock large 50-video batch creation, automated source delta updates, and multi-part marathon splitting.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <!-- Tier 1: Free Starter -->
+          <div class="p-4 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col justify-between space-y-3">
+            <div class="space-y-1">
+              <div class="flex justify-between items-center">
+                <h4 class="font-bold text-sm text-slate-200">Starter</h4>
+                <span class="text-xs font-bold text-slate-400">₹0 / $0</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Casual series viewer</p>
+              <ul class="text-[11px] text-slate-400 space-y-1 pt-2">
+                <li>• 2 playlists / day</li>
+                <li>• Max 20 videos per batch</li>
+                <li>• Multi-POV Series discovery</li>
+                <li>• Custom Client ID supported</li>
+              </ul>
+            </div>
+            <button onclick="selectPlan('starter')" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition">
+              Current Plan
+            </button>
+          </div>
+
+          <!-- Tier 2: 1-Month Pass -->
+          <div class="p-4 bg-purple-950/20 border border-purple-800/60 rounded-xl flex flex-col justify-between space-y-3">
+            <div class="space-y-1">
+              <div class="flex justify-between items-center">
+                <h4 class="font-bold text-sm text-purple-300">1-Month Pass</h4>
+                <span class="text-xs font-bold text-slate-200">₹149 / $1.99</span>
+              </div>
+              <p class="text-[11px] text-purple-400">30 days Full Studio Access</p>
+              <ul class="text-[11px] text-slate-300 space-y-1 pt-2">
+                <li>• Full Studio daily creation limits</li>
+                <li>• Max 50 videos per batch</li>
+                <li>• Automatic multi-part batch splitting</li>
+                <li>• Smart Delta Sync for new uploads</li>
+              </ul>
+            </div>
+            <button onclick="selectPlan('monthly')" class="w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-lg shadow transition active:scale-95">
+              Activate Pass
+            </button>
+          </div>
+
+          <!-- Tier 3: 3-Month Quarterly -->
+          <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl flex flex-col justify-between space-y-3">
+            <div class="space-y-1">
+              <div class="flex justify-between items-center">
+                <h4 class="font-bold text-sm text-cyan-300">Quarterly Pass</h4>
+                <span class="text-xs font-bold text-slate-200">₹399 / $4.99</span>
+              </div>
+              <p class="text-[11px] text-cyan-400">90 days access (Save 15%)</p>
+              <ul class="text-[11px] text-slate-300 space-y-1 pt-2">
+                <li>• Everything in Monthly Pass</li>
+                <li>• Priority Multi-POV resolution</li>
+                <li>• Dedicated setup assistance</li>
+              </ul>
+            </div>
+            <button onclick="selectPlan('quarterly')" class="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-lg transition active:scale-95">
+              Activate Pass
+            </button>
+          </div>
+
+          <!-- Tier 4: Annual VIP -->
+          <div class="p-4 bg-slate-900 border border-amber-800/50 rounded-xl flex flex-col justify-between space-y-3 relative overflow-hidden">
+            <div class="absolute -top-1 -right-1 bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-bl">BEST VALUE</div>
+            <div class="space-y-1">
+              <div class="flex justify-between items-center">
+                <h4 class="font-bold text-sm text-amber-300">Annual VIP</h4>
+                <span class="text-xs font-bold text-slate-200">₹899 / $11.99</span>
+              </div>
+              <p class="text-[11px] text-amber-400">365 days access (Save 50%)</p>
+              <ul class="text-[11px] text-slate-300 space-y-1 pt-2">
+                <li>• Unrestricted year-round access</li>
+                <li>• All future experimental features</li>
+                <li>• Google Play Billing integration ready</li>
+              </ul>
+            </div>
+            <button onclick="selectPlan('annual')" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition active:scale-95">
+              Activate VIP
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Play Store & YouTube Policy Disclaimer -->
+      <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[10px] text-slate-500 leading-relaxed">
+        <strong>Google Play & YouTube Policy Notice:</strong> Subscription fees apply exclusively to Playlist Studio's proprietary sequence tools, automated delta sync engines, and local app automation. We never charge for access to YouTube content or basic YouTube Data API services. Users may configure their own Google Cloud Client ID at any tier.
+      </div>
+    </section>
+
     <!-- Global Console Status Box -->
     <div id="statusCard" class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -551,6 +792,7 @@
     let accessToken = null;
     let tokenClient;
     let isMergeCancelled = false;
+    let isGuestSession = false;
 
     // Library State
     let libraryPlaylists = [];
@@ -566,30 +808,247 @@
     let nextCreatorPlaylistsPageToken = null;
     let nextCreatorVideosPageToken = null;
     let totalCreatorVideosCount = 0;
-    let lastStrippedBackup = null;
-    let lastStrippedCount = 0;
 
     // Focused Playlist for Inspection in Videos Tab
     let activeInspectedPlaylist = null;
 
+    // Subscription & Quota Tracking State
+    const PLAN_LIMITS = {
+      starter: { maxPlaylistsPerDay: 2, maxVideosPerBatch: 20, name: "Starter Free" },
+      monthly: { maxPlaylistsPerDay: 50, maxVideosPerBatch: 50, name: "1-Month Pass" },
+      quarterly: { maxPlaylistsPerDay: 50, maxVideosPerBatch: 50, name: "Quarterly Pass" },
+      annual: { maxPlaylistsPerDay: 100, maxVideosPerBatch: 50, name: "Annual VIP" }
+    };
+
     window.addEventListener("DOMContentLoaded", () => {
+      // Check First-Run Onboarding
+      if (!localStorage.getItem("ps_has_onboarded")) {
+        document.getElementById("onboardingModal").classList.remove("hidden");
+      }
+
       const customInput = document.getElementById("customClientIdInput");
       if (customInput && localStorage.getItem("custom_yt_client_id")) {
         customInput.value = localStorage.getItem("custom_yt_client_id");
       }
+
+      initSubscriptionState();
+      updateQuotaMonitorUI();
+      startQuotaCountdown();
 
       const cachedToken = localStorage.getItem("yt_access_token");
       const expiry = localStorage.getItem("yt_token_expiry");
 
       if (cachedToken && expiry && Date.now() < parseInt(expiry, 10)) {
         accessToken = cachedToken;
+        isGuestSession = false;
         document.getElementById("authGateScreen").classList.add("hidden");
+        updateSessionUI(true);
         setStatus("Restored session successfully.", false);
         loadMyPlaylists(true);
       } else if (cachedToken) {
         disconnectAccount(false);
       }
     });
+
+    // ================= ONBOARDING CAROUSEL =================
+    let currentOnboardSlide = 1;
+
+    function nextOnboardingSlide() {
+      document.getElementById(`onboard-slide-${currentOnboardSlide}`).classList.add("hidden");
+      currentOnboardSlide++;
+      if (currentOnboardSlide > 3) {
+        skipOnboarding();
+        return;
+      }
+      document.getElementById(`onboard-slide-${currentOnboardSlide}`).classList.remove("hidden");
+      
+      const dots = document.getElementById("onboardDots").children;
+      for (let i = 0; i < dots.length; i++) {
+        dots[i].className = i === currentOnboardSlide - 1 ? "w-2.5 h-1.5 rounded-full bg-purple-500" : "w-1.5 h-1.5 rounded-full bg-slate-700";
+      }
+
+      if (currentOnboardSlide === 3) {
+        document.getElementById("onboardNextBtn").innerText = "Get Started ✓";
+      }
+    }
+
+    function skipOnboarding() {
+      localStorage.setItem("ps_has_onboarded", "true");
+      document.getElementById("onboardingModal").classList.add("hidden");
+    }
+
+    function enterGuestMode() {
+      isGuestSession = true;
+      accessToken = null;
+      document.getElementById("authGateScreen").classList.add("hidden");
+      updateSessionUI(false);
+      navigateTo("search");
+      setStatus("Exploring in Guest Mode. Connect YouTube when ready to create playlists.", false);
+    }
+
+    function updateSessionUI(isConnected) {
+      const connBadge = document.getElementById("headerConnectionBadge");
+      const sessionText = document.getElementById("drawerSessionStatus");
+      const sessionSub = document.getElementById("drawerSessionSub");
+      const authBtn = document.getElementById("drawerAuthBtn");
+
+      if (isConnected) {
+        connBadge.className = "text-[11px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1";
+        connBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Connected`;
+        sessionText.className = "text-[11px] text-emerald-400 flex items-center gap-1.5 font-medium";
+        sessionText.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Auto-Login Session Active`;
+        sessionSub.innerText = "Your token is preserved across browser reloads.";
+        authBtn.innerText = "Disconnect Account";
+        authBtn.onclick = () => disconnectAccount(false);
+      } else {
+        connBadge.className = "text-[11px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1";
+        connBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Guest Mode`;
+        sessionText.className = "text-[11px] text-amber-400 flex items-center gap-1.5 font-medium";
+        sessionText.innerHTML = `<span>👀</span> Browsing as Guest`;
+        sessionSub.innerText = "Connect your account to save playlists directly.";
+        authBtn.innerText = "Connect YouTube Account";
+        authBtn.onclick = () => { toggleDrawer(); handleAuth(); };
+      }
+    }
+
+    // ================= SUBSCRIPTION & BILLING ENGINE =================
+    function getSubscriptionData() {
+      try {
+        const stored = localStorage.getItem("ps_user_plan");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+      return { plan: "starter", expiresAt: null };
+    }
+
+    function initSubscriptionState() {
+      const sub = getSubscriptionData();
+      const planKey = sub.plan || "starter";
+      const plan = PLAN_LIMITS[planKey] || PLAN_LIMITS.starter;
+
+      const headerText = document.getElementById("headerPlanText");
+      if (headerText) headerText.innerText = plan.name;
+
+      const drawerBadge = document.getElementById("drawerPlanBadge");
+      if (drawerBadge) drawerBadge.innerText = planKey;
+
+      const planDisplayName = document.getElementById("planDisplayName");
+      if (planDisplayName) planDisplayName.innerText = plan.name;
+
+      const planStatusTag = document.getElementById("planStatusTag");
+      if (planStatusTag) planStatusTag.innerText = planKey;
+
+      const daysLeftLabel = document.getElementById("planDaysLeft");
+      if (daysLeftLabel) {
+        if (!sub.expiresAt) {
+          daysLeftLabel.innerText = "Lifetime Free Access";
+          daysLeftLabel.className = "text-xs text-emerald-400 font-medium";
+        } else {
+          const diffMs = sub.expiresAt - Date.now();
+          const days = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+          daysLeftLabel.innerText = `${days} days remaining`;
+          daysLeftLabel.className = days <= 3 ? "text-xs text-rose-400 font-bold" : "text-xs text-emerald-400 font-semibold";
+        }
+      }
+    }
+
+    function selectPlan(planKey) {
+      if (planKey === "starter") {
+        localStorage.setItem("ps_user_plan", JSON.stringify({ plan: "starter", expiresAt: null }));
+        initSubscriptionState();
+        alert("Switched to Starter Free Tier.");
+        return;
+      }
+
+      let durationDays = 30;
+      if (planKey === "quarterly") durationDays = 90;
+      if (planKey === "annual") durationDays = 365;
+
+      const expiry = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+      localStorage.setItem("ps_user_plan", JSON.stringify({ plan: planKey, expiresAt: expiry }));
+      initSubscriptionState();
+      alert(`Success! Activated ${PLAN_LIMITS[planKey].name} (${durationDays} days). In Google Play, this initiates Google Play Billing.`);
+    }
+
+    function getDailyCreationUsage() {
+      const today = new Date().toISOString().slice(0, 10);
+      try {
+        const data = JSON.parse(localStorage.getItem(`ps_usage_${today}`) || "{}");
+        return { count: data.count || 0, units: data.units || 0 };
+      } catch (e) {
+        return { count: 0, units: 0 };
+      }
+    }
+
+    function recordCreationUsage(videosAdded) {
+      const today = new Date().toISOString().slice(0, 10);
+      const cur = getDailyCreationUsage();
+      const unitsUsed = 50 + (videosAdded * 50);
+      localStorage.setItem(`ps_usage_${today}`, JSON.stringify({
+        count: cur.count + 1,
+        units: cur.units + unitsUsed
+      }));
+      updateQuotaMonitorUI();
+    }
+
+    function updateQuotaMonitorUI() {
+      const isCustomId = localStorage.getItem("custom_yt_client_id");
+      const totalPool = isCustomId ? 100000 : 10000;
+      const usage = getDailyCreationUsage();
+      const remainingUnits = Math.max(0, totalPool - usage.units);
+
+      const quotaPoolTag = document.getElementById("quotaPoolTag");
+      if (quotaPoolTag) quotaPoolTag.innerText = isCustomId ? "Custom 100k Pool" : "Standard 10k Pool";
+
+      const quotaUnitDisplay = document.getElementById("quotaUnitDisplay");
+      if (quotaUnitDisplay) quotaUnitDisplay.innerText = `~${remainingUnits.toLocaleString()} / ${totalPool.toLocaleString()}`;
+
+      const quotaBarFill = document.getElementById("quotaBarFill");
+      if (quotaBarFill) {
+        const pct = Math.round((remainingUnits / totalPool) * 100);
+        quotaBarFill.style.width = `${pct}%`;
+      }
+
+      const quotaCapacityText = document.getElementById("quotaCapacityText");
+      if (quotaCapacityText) {
+        const potentialPlaylists = Math.floor(remainingUnits / (50 + 20 * 50));
+        const maxSingleRunVids = Math.max(0, Math.floor((remainingUnits - 50) / 50));
+        quotaCapacityText.innerHTML = `Sufficient quota to create <strong>~${potentialPlaylists} playlists</strong> (at 20 vids each) or <strong>1 large collection</strong> with up to <strong>${maxSingleRunVids} videos</strong>.`;
+      }
+    }
+
+    function startQuotaCountdown() {
+      function tick() {
+        const now = new Date();
+        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 8, 0, 0));
+        let diff = tomorrow.getTime() - now.getTime();
+        if (diff < 0) diff += 86400000;
+
+        const hrs = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
+        const mins = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+        const secs = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+
+        const timerEl = document.getElementById("quotaResetTimer");
+        if (timerEl) timerEl.innerText = `${hrs}h ${mins}m ${secs}s`;
+      }
+      tick();
+      setInterval(tick, 1000);
+    }
+
+    // ================= GEMINI AI ASSISTANT DEEP-LINK =================
+    const GEMINI_PROMPT_TEXT = "I am using the Playlist Studio for YT app. Please guide me step-by-step to create a Google Cloud project, enable YouTube Data API v3, create an OAuth 2.0 Web Application Client ID with authorized origins, and request a 100k daily quota extension.";
+
+    function openGeminiGuidePrompt() {
+      const encoded = encodeURIComponent(GEMINI_PROMPT_TEXT);
+      window.open(`https://gemini.google.com/app?q=${encoded}`, '_blank');
+    }
+
+    function copyGeminiPrompt() {
+      navigator.clipboard.writeText(GEMINI_PROMPT_TEXT).then(() => {
+        alert("Prompt copied to clipboard! Paste it directly into Gemini.");
+      }).catch(() => {
+        prompt("Copy this prompt for Gemini:", GEMINI_PROMPT_TEXT);
+      });
+    }
 
     function saveCustomClientId() {
       const val = document.getElementById("customClientIdInput").value.trim();
@@ -598,6 +1057,7 @@
       activeClientId = val;
       tokenClient = null;
       disconnectAccount(false);
+      updateQuotaMonitorUI();
       alert("Custom Client ID saved! Connect using your dedicated project.");
     }
 
@@ -607,6 +1067,7 @@
       document.getElementById("customClientIdInput").value = "";
       tokenClient = null;
       disconnectAccount(false);
+      updateQuotaMonitorUI();
       alert("Restored default Client ID.");
     }
 
@@ -655,7 +1116,7 @@
       const token = accessToken || "";
 
       if (!token) {
-        alert("Please connect your YouTube account first.");
+        alert("Please connect your YouTube account first to run Multi-POV scanning.");
         return;
       }
 
@@ -921,6 +1382,8 @@
         });
       }
 
+      recordCreationUsage(allVideos.length);
+
       const syncRecord = {
         masterPlaylistId,
         sourcePlaylists: discoveredPlaylists.map(p => p.playlistId),
@@ -933,20 +1396,30 @@
     }
     
     function navigateTo(view) {
-      toggleDrawer();
+      const drawer = document.getElementById("sideDrawer");
+      if (!drawer.classList.contains("-translate-x-full")) toggleDrawer();
+
       document.getElementById("view-library").classList.add("hidden");
       document.getElementById("view-search").classList.add("hidden");
+      document.getElementById("view-plans").classList.add("hidden");
+
       document.getElementById("nav-library").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 flex items-center gap-3";
       document.getElementById("nav-search").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 flex items-center gap-3";
+      document.getElementById("nav-plans").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 flex items-center justify-between";
 
       if (view === "library") {
         document.getElementById("view-library").classList.remove("hidden");
         document.getElementById("nav-library").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-purple-300 flex items-center gap-3";
         document.getElementById("screenTitle").innerText = "My Library";
-      } else {
+      } else if (view === "search") {
         document.getElementById("view-search").classList.remove("hidden");
         document.getElementById("nav-search").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-purple-300 flex items-center gap-3";
         document.getElementById("screenTitle").innerText = "Creator Explorer";
+      } else if (view === "plans") {
+        document.getElementById("view-plans").classList.remove("hidden");
+        document.getElementById("nav-plans").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-amber-300 flex items-center justify-between";
+        document.getElementById("screenTitle").innerText = "Plans & Quota";
+        updateQuotaMonitorUI();
       }
     }
 
@@ -960,12 +1433,14 @@
             return;
           }
           accessToken = resp.access_token;
+          isGuestSession = false;
           const expiresInSec = resp.expires_in || 3500;
           const expiryTimestamp = Date.now() + (expiresInSec * 1000);
           localStorage.setItem("yt_access_token", accessToken);
           localStorage.setItem("yt_token_expiry", expiryTimestamp.toString());
 
           document.getElementById("authGateScreen").classList.add("hidden");
+          updateSessionUI(true);
           setStatus("Connected successfully!", false);
           loadMyPlaylists(true);
         },
@@ -985,6 +1460,7 @@
       localStorage.removeItem("yt_access_token");
       localStorage.removeItem("yt_token_expiry");
       accessToken = null;
+      isGuestSession = false;
       
       const drawer = document.getElementById("sideDrawer");
       if (!drawer.classList.contains("-translate-x-full")) {
@@ -993,6 +1469,7 @@
 
       document.getElementById("authGateScreen").classList.remove("hidden");
       document.getElementById("libraryPlaylistsContainer").innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400">Connect account to view playlists.</div>`;
+      updateSessionUI(false);
       setStatus("Logged out.", false);
 
       if (showAlert) {
@@ -1016,7 +1493,10 @@
 
     // ================= VIEW 1: LIBRARY LOGIC =================
     async function loadMyPlaylists(reset = false) {
-      if (!accessToken) return;
+      if (!accessToken) {
+        document.getElementById("libraryPlaylistsContainer").innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400">Browsing as Guest. Connect YouTube to load your library.</div>`;
+        return;
+      }
       const refreshBtn = document.getElementById("refreshBtn");
       refreshBtn.innerText = "⏳ Refreshing playlists...";
       refreshBtn.disabled = true;
@@ -1175,6 +1655,22 @@
     }
 
     async function combineLibraryPlaylists() {
+      if (!accessToken) {
+        alert("Please connect your YouTube account to compile playlists.");
+        handleAuth();
+        return;
+      }
+
+      const sub = getSubscriptionData();
+      const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
+      const usage = getDailyCreationUsage();
+
+      if (usage.count >= plan.maxPlaylistsPerDay) {
+        alert(`You have reached your daily creation limit (${plan.maxPlaylistsPerDay} playlists/day on ${plan.name}). Upgrade your plan in Plans & Quota Monitor to unlock higher limits.`);
+        navigateTo("plans");
+        return;
+      }
+
       if (selectedLibraryIds.size < 1) return alert("Select at least one playlist to combine.");
       let title = document.getElementById("combinedTitleInput")?.value?.trim() || "";
 
@@ -1209,6 +1705,7 @@
 
     // ================= SMART DELTA SYNC ENGINE =================
     async function syncPlaylist(targetPlaylistId) {
+      if (!accessToken) return alert("Connect YouTube account to run Delta Sync.");
       const trackedSources = getTrackedSources();
       const sourceMeta = trackedSources[targetPlaylistId];
       if (!sourceMeta) return alert("No source playlist tracked for this item.");
@@ -1304,6 +1801,7 @@
           progressCount.innerText = `${inserted} of ${total} new videos added`;
         }
 
+        recordCreationUsage(inserted);
         progressModal.classList.add("hidden");
         alert(isMergeCancelled ? `Sync stopped. Appended ${inserted} new episodes.` : `Sync complete! Added ${inserted} new episodes to your playlist.`);
         loadMyPlaylists(true);
@@ -1320,20 +1818,18 @@
       if (!rawInput) return alert("Please enter a creator name or handle.");
 
       setStatus(`Finding creator "${rawInput}"...`, true);
+      const authHeader = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+
       try {
         let channelId = null;
         const cleanName = rawInput.replace(/^@/, '');
 
         const handleRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forHandle=${encodeURIComponent(cleanName)}`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
+          headers: authHeader
         });
 
-        if (handleRes.status === 401) {
+        if (handleRes.status === 401 && accessToken) {
           disconnectAccount(true);
-          return;
-        }
-        if (handleRes.status === 403) {
-          alert("YouTube API daily quota reached.");
           return;
         }
 
@@ -1343,15 +1839,11 @@
           channelId = currentCreatorData.id;
         } else {
           const chRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(rawInput)}&maxResults=1`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
+            headers: authHeader
           });
 
-          if (chRes.status === 401) {
+          if (chRes.status === 401 && accessToken) {
             disconnectAccount(true);
-            return;
-          }
-          if (chRes.status === 403) {
-            alert("YouTube API daily quota reached.");
             return;
           }
 
@@ -1362,13 +1854,8 @@
           channelId = chData.items[0].id?.channelId || chData.items[0].snippet?.channelId;
           
           const detailsRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${channelId}`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
+            headers: authHeader
           });
-
-          if (detailsRes.status === 401) {
-            disconnectAccount(true);
-            return;
-          }
 
           const details = await detailsRes.json();
           if (!details.items || details.items.length === 0) {
@@ -1386,11 +1873,9 @@
         selectedCreatorItemIds.clear();
         updateCreatorSelectedBadge();
 
-        // Reset active inspected playlist
         activeInspectedPlaylist = null;
         document.getElementById("videoSourceBanner").classList.add("hidden");
 
-        // Clear both data arrays & page tokens so results never accumulate
         creatorPlaylists = [];
         nextCreatorPlaylistsPageToken = null;
         creatorVideos = [];
@@ -1501,19 +1986,16 @@
     async function fetchNextCreatorBatch() {
       const keyword = document.getElementById("searchKeywordInput").value.trim();
       const loadMoreBtn = document.getElementById("loadMoreCreatorBtn");
+      const authHeader = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 
       if (creatorMode === "playlists") {
         setStatus(`Loading creator playlists...`, true);
         let url = `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${currentCreatorData.id}&maxResults=50`;
         if (nextCreatorPlaylistsPageToken) url += `&pageToken=${nextCreatorPlaylistsPageToken}`;
 
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-        if (res.status === 401) {
+        const res = await fetch(url, { headers: authHeader });
+        if (res.status === 401 && accessToken) {
           disconnectAccount(true);
-          return;
-        }
-        if (res.status === 403) {
-          alert("YouTube API daily quota limit reached.");
           return;
         }
 
@@ -1537,9 +2019,8 @@
           let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${activeInspectedPlaylist.id}&maxResults=50`;
           if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
 
-          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-          if (res.status === 401) { disconnectAccount(true); return; }
-          if (res.status === 403) { alert("YouTube API daily quota limit reached."); return; }
+          const res = await fetch(url, { headers: authHeader });
+          if (res.status === 401 && accessToken) { disconnectAccount(true); return; }
 
           const data = await res.json();
           nextCreatorVideosPageToken = data.nextPageToken || null;
@@ -1556,9 +2037,8 @@
           let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${currentCreatorData.id}&q=${encodeURIComponent(keyword)}&type=video&maxResults=50`;
           if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
 
-          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-          if (res.status === 401) { disconnectAccount(true); return; }
-          if (res.status === 403) { alert("YouTube API daily quota limit reached."); return; }
+          const res = await fetch(url, { headers: authHeader });
+          if (res.status === 401 && accessToken) { disconnectAccount(true); return; }
 
           const data = await res.json();
           nextCreatorVideosPageToken = data.nextPageToken || null;
@@ -1584,9 +2064,8 @@
           let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=50`;
           if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
 
-          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-          if (res.status === 401) { disconnectAccount(true); return; }
-          if (res.status === 403) { alert("YouTube API daily quota limit reached."); return; }
+          const res = await fetch(url, { headers: authHeader });
+          if (res.status === 401 && accessToken) { disconnectAccount(true); return; }
 
           const data = await res.json();
           nextCreatorVideosPageToken = data.nextPageToken || null;
@@ -1674,7 +2153,8 @@
     async function scanAndMergeCollabPlaylist(sourcePlaylistId, playlistTitle) {
       const token = accessToken || "";
       if (!token) {
-        alert("Please sign in with your YouTube account first.");
+        alert("Please connect your YouTube account first to run Multi-POV scan.");
+        handleAuth();
         return;
       }
 
@@ -1790,6 +2270,7 @@
           await new Promise(r => setTimeout(r, 120));
         }
 
+        recordCreationUsage(sortedVideos.length);
         setStatus(`Master playlist compiled (${sortedVideos.length} videos)!`, false);
         alert(`Created "${masterTitle}" with ${sortedVideos.length} chronological episodes!`);
         if (typeof loadMyPlaylists === "function") loadMyPlaylists(true);
@@ -1859,6 +2340,22 @@
     }
 
     async function saveCreatorSelectionToPlaylist() {
+      if (!accessToken) {
+        alert("Please connect your YouTube account to compile playlists.");
+        handleAuth();
+        return;
+      }
+
+      const sub = getSubscriptionData();
+      const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
+      const usage = getDailyCreationUsage();
+
+      if (usage.count >= plan.maxPlaylistsPerDay) {
+        alert(`You have reached your daily creation limit (${plan.maxPlaylistsPerDay} playlists/day on ${plan.name}). Upgrade your plan in Plans & Quota Monitor to unlock higher limits.`);
+        navigateTo("plans");
+        return;
+      }
+
       if (selectedCreatorItemIds.size < 1) return alert("Select at least one item.");
       let title = document.getElementById("creatorNewPlaylistTitle")?.value?.trim() || "";
 
@@ -1979,13 +2476,16 @@
         finalVideos.sort((a, b) => b.publishedAt - a.publishedAt);
       }
 
-      // Step 4: Smart Automatic Chunking Check (50 items max per batch)
-      const CHUNK_SIZE = 50;
+      // Step 4: Fair-Use & Subscription Batch Limit Verification
+      const sub = getSubscriptionData();
+      const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
+      const CHUNK_SIZE = plan.maxVideosPerBatch || 20;
+
       let chunks = [];
 
       if (finalVideos.length > CHUNK_SIZE) {
         const numParts = Math.ceil(finalVideos.length / CHUNK_SIZE);
-        const autoSplit = confirm(`You selected ${finalVideos.length} videos. To stay strictly within YouTube's daily API limits and prevent failures, Playlist Studio can automatically split this into ${numParts} chronological parts (Part 1, Part 2, etc.).\n\nClick OK to split automatically, or Cancel to abort.`);
+        const autoSplit = confirm(`You selected ${finalVideos.length} videos. Under your ${plan.name}, batches are sectioned into maximum ${CHUNK_SIZE} videos per playlist to protect your daily quota.\n\nClick OK to automatically split this into ${numParts} chronological parts (Part 1, Part 2, etc.), or Cancel to abort.`);
         if (!autoSplit) {
           progressModal.classList.add("hidden");
           return;
@@ -2057,9 +2557,10 @@
         }
       }
 
+      recordCreationUsage(totalInsertedOverall);
       progressModal.classList.add("hidden");
 
-      // Step 6: Render Success Modal with Direct Links to Each Part
+      // Step 6: Render Success Modal
       const linksContainer = document.getElementById("successLinksContainer");
       linksContainer.innerHTML = "";
 

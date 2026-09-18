@@ -1070,6 +1070,18 @@
       const planStatusTag = document.getElementById("planStatusTag");
       if (planStatusTag) planStatusTag.innerText = planKey;
 
+      // Dynamically update the banner description based on active plan
+      const descNote = document.getElementById("planDescNote");
+      if (descNote) {
+        if (planKey === "developer") {
+          descNote.innerText = "Developer VIP Access: Uncapped playlist creation, 50-video batches, automatic splitting, and unlimited delta syncing.";
+        } else if (planKey === "starter") {
+          descNote.innerText = "Includes up to 2 created playlists per day (capped at 20 videos each) with full Multi-POV scan & chronological sequencing.";
+        } else {
+          descNote.innerText = "Full Studio Access: Up to 50 videos per batch, automatic multi-part batch splitting, and smart delta syncing.";
+        }
+      }
+
       const daysLeftLabel = document.getElementById("planDaysLeft");
       if (daysLeftLabel) {
         if (!sub.expiresAt) {

@@ -1174,14 +1174,16 @@
     function startQuotaCountdown() {
       function tick() {
         const now = new Date();
-        // Google Data API daily quota resets at Midnight Pacific Time (08:00 UTC)
-        const nextReset = new Date();
-        nextReset.setUTCHours(8, 0, 0, 0);
-        if (now.getTime() >= nextReset.getTime()) {
-          nextReset.setUTCDate(nextReset.getUTCDate() + 1);
-        }
+        // Convert to California time (America/Los_Angeles) to automatically handle PST/PDT
+        const ptString = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+        const ptNow = new Date(ptString);
 
-        const diff = Math.max(0, nextReset.getTime() - now.getTime());
+        // Next Midnight Pacific Time
+        const ptMidnight = new Date(ptNow);
+        ptMidnight.setDate(ptMidnight.getDate() + 1);
+        ptMidnight.setHours(0, 0, 0, 0);
+
+        const diff = Math.max(0, ptMidnight.getTime() - ptNow.getTime());
         const hrs = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
         const mins = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
         const secs = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');

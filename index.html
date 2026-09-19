@@ -211,7 +211,7 @@
       <button onclick="openAboutModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-purple-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition">
         <span>ℹ️</span> About & Credits
       </button>
-      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.6</div>
+      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.7</div>
     </div>
   </div>
 
@@ -650,7 +650,7 @@
       </div>
 
       <!-- Beta / VIP Promo Code Redemption Box -->
-      <div class="p-3.5 bg-slate-900/90 border border-purple-800/40 rounded-2xl space-y-2.5 shadow-md">
+      <div id="promoBoxCard" class="p-3.5 bg-slate-900/90 border border-purple-800/40 rounded-2xl space-y-2.5 shadow-md">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
             <span>🎟️</span> Have a VIP or Beta Promo Code?
@@ -661,8 +661,8 @@
           <input 
             id="promoCodeInput" 
             type="text" 
-            placeholder="Enter Code (e.g. Yaman246)" 
-            class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono uppercase focus:outline-none focus:border-purple-500 placeholder:text-slate-600"
+            placeholder="Code (e.g. Yaman246)" 
+            class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-[11px] sm:text-xs font-mono uppercase focus:outline-none focus:border-purple-500 placeholder:text-slate-600"
           />
           <button onclick="redeemPromoCode()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition active:scale-95 shadow">
             Apply Pass
@@ -1082,6 +1082,16 @@
         }
       }
 
+      // Hide the Promo Box if user already has Developer VIP or active pass
+      const promoCard = document.getElementById("promoBoxCard");
+      if (promoCard) {
+        if (planKey === "developer" || (sub.expiresAt && sub.expiresAt > Date.now())) {
+          promoCard.classList.add("hidden");
+        } else {
+          promoCard.classList.remove("hidden");
+        }
+      }
+
       const daysLeftLabel = document.getElementById("planDaysLeft");
       if (daysLeftLabel) {
         if (!sub.expiresAt) {
@@ -1164,10 +1174,14 @@
     function startQuotaCountdown() {
       function tick() {
         const now = new Date();
-        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 8, 0, 0));
-        let diff = tomorrow.getTime() - now.getTime();
-        if (diff < 0) diff += 86400000;
+        // Google Data API daily quota resets at Midnight Pacific Time (08:00 UTC)
+        const nextReset = new Date();
+        nextReset.setUTCHours(8, 0, 0, 0);
+        if (now.getTime() >= nextReset.getTime()) {
+          nextReset.setUTCDate(nextReset.getUTCDate() + 1);
+        }
 
+        const diff = Math.max(0, nextReset.getTime() - now.getTime());
         const hrs = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
         const mins = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
         const secs = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');

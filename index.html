@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Playlist Studio for YT</title>
+  <title>Playlist Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -79,18 +79,19 @@
     </div>
   </div>
 
-  <!-- ================= AUTH GATE SCREEN ================= -->
-  <div id="authGateScreen" class="fixed inset-0 bg-slate-950 z-40 flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
-    <div class="max-w-sm w-full space-y-6 my-auto">
+  <!-- ================= AUTH GATE SCREEN (FIXED OVERFLOW & BRANDING) ================= -->
+  <div id="authGateScreen" class="fixed inset-0 bg-slate-950 z-40 flex flex-col items-center justify-start overflow-y-auto p-4 sm:p-6 text-center">
+    <div class="max-w-sm w-full space-y-5 my-auto py-8">
       <div class="space-y-2">
         <div class="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-tr from-red-600 via-pink-600 to-purple-600 rounded-2xl shadow-xl shadow-purple-950/40 border border-purple-500/20">
           <span class="text-2xl">🎬</span>
         </div>
         <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-red-500 via-pink-500 to-purple-400 bg-clip-text text-transparent">
-          Playlist Studio for YT
+          Playlist Studio
         </h1>
-        <p class="text-xs text-slate-400 leading-relaxed">
-          The power-tool YouTube never gave you. Merge playlists, sync multi-perspective collaborator series, sort in chronological order, and binge uninterrupted.
+        <p class="text-[11px] font-semibold text-purple-400 uppercase tracking-wider">A companion organizer for YouTube™</p>
+        <p class="text-xs text-slate-400 leading-relaxed pt-1">
+          The power-tool to merge playlists, sync multi-perspective collaborator series, sort in chronological order, and binge uninterrupted.
         </p>
       </div>
 
@@ -131,7 +132,7 @@
       </div>
     </div>
 
-    <div class="mt-6 pt-4 border-t border-slate-800 text-[11px] text-slate-400 space-y-1.5 text-center">
+    <div class="mt-auto pt-6 pb-4 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1.5 text-center max-w-sm w-full">
       <p>
         This application uses 
         <a href="https://developers.google.com/youtube/terms/api-services-terms-of-service" target="_blank" class="text-indigo-400 underline">YouTube API Services</a>.
@@ -141,10 +142,10 @@
         <a href="https://www.youtube.com/t/terms" target="_blank" class="text-indigo-400 underline">YouTube Terms of Service</a> and the 
         <a href="http://www.google.com/policies/privacy" target="_blank" class="text-indigo-400 underline">Google Privacy Policy</a>.
       </p>
-      <p class="pt-1">
-        <a href="#privacy" onclick="alert('Playlist Studio for YT does not store, collect, or share your personal data or YouTube credentials on external servers. Authentication tokens are stored locally in your browser session and can be cleared at any time.');" class="text-indigo-400 underline">Privacy Notice</a>
-        &bull;
-        <a href="https://myaccount.google.com/permissions" target="_blank" class="text-indigo-400 underline">Google Security Settings (Revoke Access)</a>
+      <p class="pt-1 flex items-center justify-center gap-2 flex-wrap">
+        <button onclick="openPrivacyModal()" class="text-indigo-400 underline hover:text-indigo-300">Privacy Policy</button>
+        <span>&bull;</span>
+        <a href="https://myaccount.google.com/permissions" target="_blank" class="text-indigo-400 underline hover:text-indigo-300">Google Security Settings (Revoke Access)</a>
       </p>
     </div>
   </div>
@@ -205,13 +206,16 @@
     </div>
 
     <div class="pt-4 border-t border-slate-800 space-y-2">
-      <button onclick="openTutorialModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-cyan-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition mb-2">
+      <button onclick="openTutorialModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-cyan-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition mb-1">
         <span>📖</span> How to Use & Tutorial
+      </button>
+      <button onclick="openPrivacyModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-indigo-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition mb-1">
+        <span>🛡️</span> Privacy Policy
       </button>
       <button onclick="openAboutModal()" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-purple-300 text-xs py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition">
         <span>ℹ️</span> About & Credits
       </button>
-      <div class="text-[11px] text-slate-600 text-center">Playlist Studio v7.7</div>
+      <div class="text-[11px] text-slate-600 text-center pt-1">Playlist Studio v7.8</div>
     </div>
   </div>
 
@@ -249,6 +253,63 @@
       </a>
       <button type="button" onclick="closePreviewSheet()" class="py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition active:scale-95">
         Done
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= COMPREHENSIVE PRIVACY POLICY MODAL ================= -->
+  <div id="privacyModal" class="fixed inset-0 bg-black/85 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-lg w-full rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto text-left text-xs text-slate-300 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-sm font-black text-indigo-400 uppercase tracking-wide">Privacy Policy & Data Disclosures</h3>
+        <button onclick="closePrivacyModal()" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-3.5 leading-relaxed">
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+          <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide">1. YouTube API Services & Third-Party Terms</h4>
+          <p class="text-slate-400">
+            Playlist Studio connects directly with <a href="https://developers.google.com/youtube/terms/api-services-terms-of-service" target="_blank" class="text-indigo-400 underline">YouTube API Services</a>. By utilizing this service, users acknowledge and agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank" class="text-indigo-400 underline">YouTube Terms of Service</a> and the <a href="http://www.google.com/policies/privacy" target="_blank" class="text-indigo-400 underline">Google Privacy Policy</a>.
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+          <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide">2. Information Collection, Storage & Device Access</h4>
+          <p class="text-slate-400">
+            Playlist Studio operates entirely within the user's browser client. We <strong>do not operate an external database or tracking server</strong>, and we never collect, store, or sell personal identifiable information.
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 text-[11px] pt-1">
+            <li><strong>OAuth Access Tokens:</strong> Ephemeral authentication tokens issued by Google Identity Services are stored locally on the user's device in browser <code>localStorage</code> to maintain session state across reloads.</li>
+            <li><strong>Local Cache & Playlist Identifiers:</strong> Tracked source playlist IDs and video sequence order are stored on the user's device solely to enable chronological sorting and Delta Sync updates.</li>
+            <li><strong>No Tracking Cookies:</strong> The application does not deploy advertising or cross-site tracking cookies.</li>
+          </ul>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+          <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide">3. Data Retention & Policy Compliance (Under 30 Days)</h4>
+          <p class="text-slate-400">
+            In compliance with YouTube API Developer Policies, all API-retrieved content, channel statistics, and video metadata are requested ephemerally in real-time. No API data is persisted for more than 30 days. Disconnecting your account or clearing your browser cache immediately purges all local storage tokens.
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+          <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide">4. Revoking Access & Security Controls</h4>
+          <p class="text-slate-400">
+            Users may revoke Playlist Studio’s access to their Google and YouTube account permissions at any time via the official <a href="https://myaccount.google.com/permissions" target="_blank" class="text-indigo-400 underline">Google Security Settings (Permissions)</a> portal.
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+          <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wide">5. Developer Contact Information</h4>
+          <p class="text-slate-400">
+            For inquiries, technical support, or privacy requests regarding Playlist Studio, contact the developer at:
+          </p>
+          <p class="font-mono text-purple-300 font-semibold text-xs pt-0.5">yamanshing@gmail.com</p>
+        </div>
+      </div>
+
+      <button onclick="closePrivacyModal()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs transition">
+        Close Privacy Policy
       </button>
     </div>
   </div>
@@ -341,11 +402,12 @@
         </div>
 
         <div class="pt-2 border-t border-slate-800">
-          <p class="font-bold text-slate-100 mb-1">🏆 Credits</p>
+          <p class="font-bold text-slate-100 mb-1">🏆 Developer & Support Contact</p>
           <p class="text-slate-300">
             Conceived & developed by <strong class="text-purple-400 font-bold">Yaman</strong> in collaboration with <strong class="text-purple-400 font-bold">Gemini</strong>.
           </p>
-          <p class="text-[11px] text-slate-500 mt-1">Built with YouTube Data API v3, Google Identity Services, and TailwindCSS.</p>
+          <p class="text-[11px] text-slate-400 mt-1">Contact: <code class="text-purple-300">yamanshing@gmail.com</code></p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Built with YouTube Data API v3, Google Identity Services, and TailwindCSS.</p>
         </div>
       </div>
 
@@ -849,10 +911,8 @@
     };
 
     window.addEventListener("DOMContentLoaded", () => {
-      // 1. Direct Invite Link Detection (?promo=Yaman246)
       checkDirectInviteUrl();
 
-      // 2. Check First-Run Onboarding
       if (!localStorage.getItem("ps_has_onboarded")) {
         document.getElementById("onboardingModal").classList.remove("hidden");
       }
@@ -882,22 +942,27 @@
       }
     });
 
+    // ================= PRIVACY POLICY MODAL CONTROLS =================
+    function openPrivacyModal() {
+      const drawer = document.getElementById("sideDrawer");
+      if (drawer && !drawer.classList.contains("-translate-x-full")) toggleDrawer();
+      document.getElementById("privacyModal").classList.remove("hidden");
+    }
+
+    function closePrivacyModal() {
+      document.getElementById("privacyModal").classList.add("hidden");
+    }
+
     // ================= PROMO CODE & DIRECT INVITE ENGINE =================
-    // Base64 hash for "Yaman246"
     const PROMO_HASH = "WWFtYW4yNDY=";
 
     function isPromoWindowActive() {
-      // Seasonal Windows:
-      // Window 1: Aug 15 to Sep 30 (Late Summer)
-      // Window 2: Dec 20 to Jan 15 (Holiday Binge)
       const now = new Date();
-      const m = now.getMonth(); // 0-indexed: 0=Jan, 7=Aug, 8=Sep, 11=Dec
+      const m = now.getMonth();
       const d = now.getDate();
 
       const isLateSummer = (m === 7 && d >= 15) || m === 8;
       const isYearEnd = (m === 11 && d >= 20) || (m === 0 && d <= 15);
-      
-      // Also active during testing/launch period
       const isLaunchWindow = true; 
 
       return isLateSummer || isYearEnd || isLaunchWindow;
@@ -909,7 +974,6 @@
       if (promoQuery) {
         if (btoa(promoQuery.trim()) === PROMO_HASH) {
           applyPromoPass(true);
-          // Remove query param cleanly from URL bar without page reload
           const cleanUrl = window.location.origin + window.location.pathname;
           window.history.replaceState({}, document.title, cleanUrl);
         }
@@ -940,13 +1004,12 @@
         return;
       }
 
-      // Check anti-exploitation one-time redemption per device
       if (localStorage.getItem("ps_promo_redeemed_yaman246")) {
         alert("This VIP testing pass has already been redeemed on this browser.");
         return;
       }
 
-      const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 Days Pass
+      const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
       localStorage.setItem("ps_user_plan", JSON.stringify({ plan: "monthly", expiresAt: expiry, isTesterPass: true }));
       localStorage.setItem("ps_promo_redeemed_yaman246", "true");
       localStorage.setItem("ps_has_onboarded", "true");
@@ -973,7 +1036,6 @@
         if (res.ok) {
           const user = await res.json();
           if (user.email && DEVELOPER_EMAILS.includes(user.email.toLowerCase())) {
-            // Permanently activate Developer VIP status
             localStorage.setItem("ps_user_plan", JSON.stringify({ plan: "developer", expiresAt: null, email: user.email }));
             initSubscriptionState();
           }
@@ -1070,7 +1132,6 @@
       const planStatusTag = document.getElementById("planStatusTag");
       if (planStatusTag) planStatusTag.innerText = planKey;
 
-      // Dynamically update the banner description based on active plan
       const descNote = document.getElementById("planDescNote");
       if (descNote) {
         if (planKey === "developer") {
@@ -1082,7 +1143,6 @@
         }
       }
 
-      // Hide the Promo Box if user already has Developer VIP or active pass
       const promoCard = document.getElementById("promoBoxCard");
       if (promoCard) {
         if (planKey === "developer" || (sub.expiresAt && sub.expiresAt > Date.now())) {
@@ -1174,11 +1234,9 @@
     function startQuotaCountdown() {
       function tick() {
         const now = new Date();
-        // Convert to California time (America/Los_Angeles) to automatically handle PST/PDT
         const ptString = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
         const ptNow = new Date(ptString);
 
-        // Next Midnight Pacific Time
         const ptMidnight = new Date(ptNow);
         ptMidnight.setDate(ptMidnight.getDate() + 1);
         ptMidnight.setHours(0, 0, 0, 0);
@@ -1196,7 +1254,7 @@
     }
 
     // ================= GEMINI AI ASSISTANT DEEP-LINK =================
-    const GEMINI_PROMPT_TEXT = "I am using the Playlist Studio for YT app. Please guide me step-by-step to create a Google Cloud project, enable YouTube Data API v3, create an OAuth 2.0 Web Application Client ID with authorized origins, and request a 100k daily quota extension.";
+    const GEMINI_PROMPT_TEXT = "I am using the Playlist Studio app. Please guide me step-by-step to create a Google Cloud project, enable YouTube Data API v3, create an OAuth 2.0 Web Application Client ID with authorized origins, and request a 100k daily quota extension.";
 
     function openGeminiGuidePrompt() {
       const encoded = encodeURIComponent(GEMINI_PROMPT_TEXT);
@@ -1518,7 +1576,7 @@
         body: JSON.stringify({
           snippet: {
             title: targetPlaylistTitle,
-            description: `Chronological Multi-POV playlist created via Playlist Studio for YT.\nSources:\n` +
+            description: `Chronological Multi-POV playlist created via Playlist Studio.\nSources:\n` +
               discoveredPlaylists.map(p => `- ${p.channelTitle}: ${p.title}`).join('\n')
           },
           status: { privacyStatus: 'unlisted' }
@@ -2570,7 +2628,6 @@
 
       let videoObjects = [];
 
-      // Step 1: Ingest Video Metadata
       if (sourceType === "playlists") {
         for (const plId of selectedIds) {
           if (isMergeCancelled) break;
@@ -2624,21 +2681,18 @@
         return;
       }
 
-      // Step 2: Auto-Deduplication
       const uniqueMap = new Map();
       videoObjects.forEach(vo => {
         if (!uniqueMap.has(vo.id)) uniqueMap.set(vo.id, vo);
       });
       let finalVideos = Array.from(uniqueMap.values());
 
-      // Step 3: Chronological Sorting
       if (sortOrder === "oldest_first") {
         finalVideos.sort((a, b) => a.publishedAt - b.publishedAt);
       } else if (sortOrder === "newest_first") {
         finalVideos.sort((a, b) => b.publishedAt - a.publishedAt);
       }
 
-      // Step 4: Fair-Use & Subscription Batch Limit Verification
       const sub = getSubscriptionData();
       const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
       const CHUNK_SIZE = plan.maxVideosPerBatch || 20;
@@ -2663,7 +2717,6 @@
         chunks.push({ partNum: 0, videos: finalVideos });
       }
 
-      // Step 5: Sequentially Create Playlists & Insert Videos
       let createdPlaylists = [];
       let totalInsertedOverall = 0;
 
@@ -2693,7 +2746,6 @@
         const targetId = createdData.id;
         createdPlaylists.push({ title: partTitle, id: targetId, count: chunk.videos.length });
 
-        // Save Delta Sync tracking link
         if (sourceType === "playlists") {
           saveTrackedSource(targetId, { type: "playlists", sourceIds: selectedIds, title: newTitle });
         } else if (activeInspectedPlaylist) {
@@ -2722,7 +2774,6 @@
       recordCreationUsage(totalInsertedOverall);
       progressModal.classList.add("hidden");
 
-      // Step 6: Render Success Modal
       const linksContainer = document.getElementById("successLinksContainer");
       linksContainer.innerHTML = "";
 

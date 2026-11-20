@@ -1874,7 +1874,11 @@
       renderLibraryPlaylists();
     }
 
+    let isCombiningLibrary = false;
+
     async function combineLibraryPlaylists() {
+      if (isCombiningLibrary) return;
+
       if (!accessToken) {
         alert("Please connect your YouTube account to compile playlists.");
         handleAuth();
@@ -1912,17 +1916,26 @@
       const confirmAction = confirm(`Create "${title}" by combining ${selectedLibraryIds.size} playlist(s)?`);
       if (!confirmAction) return;
 
-      document.getElementById("libraryCombineBtn").disabled = true;
+      const btn = document.getElementById("libraryCombineBtn");
+      const originalText = btn.innerText;
+
+      isCombiningLibrary = true;
+      btn.disabled = true;
+      btn.innerText = "⏳ Combining...";
+      btn.classList.add("opacity-60", "cursor-not-allowed");
+
       try {
         await executeBatchMerge([...selectedLibraryIds], title, sortOrder, "playlists");
         selectedLibraryIds.clear();
         document.getElementById("combinedTitleInput").value = "";
-        loadMyPlaylists(true);
+        await loadMyPlaylists(true);
       } finally {
-        document.getElementById("libraryCombineBtn").disabled = false;
+        isCombiningLibrary = false;
+        btn.disabled = false;
+        btn.innerText = originalText;
+        btn.classList.remove("opacity-60", "cursor-not-allowed");
       }
     }
-
     // ================= SMART DELTA SYNC ENGINE =================
     async function syncPlaylist(targetPlaylistId) {
       if (!accessToken) return alert("Connect YouTube account to run Delta Sync.");

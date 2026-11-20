@@ -3043,15 +3043,28 @@ let isSearchingCreator = false;
     }
 
     // ================= SEQUENCE STUDIO TOOLS =================
+   function isUnavailableVideo(item) {
+      const title = (item?.snippet?.title || "").trim().toLowerCase();
+      return title === "private video" || title === "deleted video";
+    }
+
+    function getSafeTimestamp(item) {
+      const rawDate = item?.contentDetails?.videoPublishedAt || item?.snippet?.publishedAt || "";
+      if (!rawDate) return null;
+      const ms = new Date(rawDate).getTime();
+      return Number.isFinite(ms) ? ms : null;
+    }
+
     function sortCreatorItemsChrono(ascending = true) {
       const list = creatorMode === "playlists" ? creatorPlaylists : creatorVideos;
       if (list.length < 2) return;
 
       list.sort((a, b) => {
-        const rawDateA = a.contentDetails?.videoPublishedAt || a.snippet?.publishedAt || "";
-        const rawDateB = b.contentDetails?.videoPublishedAt || b.snippet?.publishedAt || "";
-        const timeA = rawDateA ? new Date(rawDateA).getTime() : 0;
-        const timeB = rawDateB ? new Date(rawDateB).getTime() : 0;
+        const timeA = getSafeTimestamp(a);
+        const timeB = getSafeTimestamp(b);
+        if (timeA === null && timeB === null) return 0;
+        if (timeA === null) return 1;
+        if (timeB === null) return -1;
         return ascending ? timeA - timeB : timeB - timeA;
       });
 

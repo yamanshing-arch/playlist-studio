@@ -1683,17 +1683,27 @@
       isGuestSession = false;
       
       const drawer = document.getElementById("sideDrawer");
-      if (!drawer.classList.contains("-translate-x-full")) {
+      if (drawer && !drawer.classList.contains("-translate-x-full")) {
         toggleDrawer();
       }
 
       document.getElementById("authGateScreen").classList.remove("hidden");
       document.getElementById("libraryPlaylistsContainer").innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400">Connect account to view playlists.</div>`;
       updateSessionUI(false);
-      setStatus("Logged out.", false);
 
+      const authStatus = document.getElementById("authGateStatus");
       if (showAlert) {
-        alert("Your YouTube authorization has expired. Please connect again.");
+        setStatus("Session expired. Please reconnect.", false);
+        if (authStatus) {
+          authStatus.className = "text-xs font-medium text-amber-300 bg-amber-950/50 border border-amber-800/60 rounded-lg px-3 py-2";
+          authStatus.innerText = "⚠️ Your YouTube session expired. Please reconnect to continue.";
+        }
+      } else {
+        setStatus("Logged out.", false);
+        if (authStatus) {
+          authStatus.className = "text-[11px] font-mono text-slate-500";
+          authStatus.innerText = "Secure authorization via Google Identity";
+        }
       }
     }
 

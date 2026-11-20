@@ -1404,10 +1404,24 @@
       }
     }
 
-    function setStatus(msg, isLoading = false) {
-      document.getElementById("statusBox").innerText = msg;
+    function setStatus(msg, isLoading = false, type = "info") {
+      const card = document.getElementById("statusCard");
+      const box = document.getElementById("statusBox");
       const spinner = document.getElementById("statusSpinner");
+
+      box.innerText = msg;
       isLoading ? spinner.classList.remove("hidden") : spinner.classList.add("hidden");
+
+      if (type === "error") {
+        card.className = "bg-rose-950/60 border border-rose-800 rounded-xl p-3 text-xs text-rose-200 flex items-center justify-between";
+        box.className = "font-mono text-[11px] text-rose-300 font-semibold";
+      } else if (type === "warning") {
+        card.className = "bg-amber-950/50 border border-amber-800/80 rounded-xl p-3 text-xs text-amber-200 flex items-center justify-between";
+        box.className = "font-mono text-[11px] text-amber-300 font-semibold";
+      } else {
+        card.className = "bg-slate-900/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 flex items-center justify-between";
+        box.className = "font-mono text-[11px] text-slate-400";
+      }
     }
 
     function toggleDrawer() {

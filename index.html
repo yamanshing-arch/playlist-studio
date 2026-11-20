@@ -2092,7 +2092,10 @@ let isSearchingCreator = false;
       if (isSearchingCreator) return;
 
       const rawInput = document.getElementById("searchCreatorInput").value.trim();
-      if (!rawInput) return alert("Please enter a creator name or handle.");
+      if (!rawInput) {
+        setStatus("Please enter a creator name or handle.", false, "warning");
+        return;
+      }
 
       const btn = document.getElementById("creatorSearchBtn");
       const originalHtml = btn ? btn.innerHTML : "";
@@ -2107,6 +2110,27 @@ let isSearchingCreator = false;
       setStatus(`Finding creator "${rawInput}"...`, true);
       const authHeader = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 
+      const handleApiError = async (res) => {
+        if (res.status === 401 && accessToken) {
+          disconnectAccount(true);
+          return true;
+        }
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
+          const msg = reason === "quotaExceeded"
+            ? "⚠️ Daily YouTube API quota reached. Enter a personal Client ID in the drawer or wait for the Midnight PST reset."
+            : `⚠️ YouTube access denied: ${errData.error?.message || reason}`;
+          setStatus(msg, false, "warning");
+          return true;
+        }
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
+        return false;
+      };
+
       try {
         let channelId = null;
         const cleanName = rawInput.replace(/^@/, '');
@@ -2114,11 +2138,7 @@ let isSearchingCreator = false;
         const handleRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forHandle=${encodeURIComponent(cleanName)}`, {
           headers: authHeader
         });
-
-        if (handleRes.status === 401 && accessToken) {
-          disconnectAccount(true);
-          return;
-        }
+        if (await handleApiError(handleRes)) return;
 
         const handleData = await handleRes.json();
         if (handleData.items && handleData.items.length > 0) {
@@ -2128,25 +2148,24 @@ let isSearchingCreator = false;
           const chRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(rawInput)}&maxResults=1`, {
             headers: authHeader
           });
-
-          if (chRes.status === 401 && accessToken) {
-            disconnectAccount(true);
-            return;
-          }
+          if (await handleApiError(chRes)) return;
 
           const chData = await chRes.json();
           if (!chData.items || chData.items.length === 0) {
-            return setStatus(`No YouTube channel found matching "${rawInput}".`, false);
+            setStatus(`No YouTube channel found matching "${rawInput}".`, false, "warning");
+            return;
           }
           channelId = chData.items[0].id?.channelId || chData.items[0].snippet?.channelId;
-          
+
           const detailsRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${channelId}`, {
             headers: authHeader
           });
+          if (await handleApiError(detailsRes)) return;
 
           const details = await detailsRes.json();
           if (!details.items || details.items.length === 0) {
-            return setStatus("Creator details could not be retrieved.", false);
+            setStatus("Creator details could not be retrieved.", false, "error");
+            return;
           }
           currentCreatorData = details.items[0];
         }
@@ -2174,7 +2193,7 @@ let isSearchingCreator = false;
           resetAndLoadCreatorVideos();
         }
       } catch (err) {
-        setStatus("Search error: " + err.message, false);
+        setStatus(`Search failed: ${err.message}`, false, "error");
       } finally {
         isSearchingCreator = false;
         if (btn) {

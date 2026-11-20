@@ -2827,6 +2827,7 @@ let isSearchingCreator = false;
 
       try {
         let videoObjects = [];
+        let skippedUnavailableCount = 0;
 
         if (sourceType === "playlists") {
           for (const plId of selectedIds) {
@@ -2858,11 +2859,13 @@ let isSearchingCreator = false;
 
               const data = await res.json();
               for (const item of (data.items || [])) {
+                if (isUnavailableVideo(item)) {
+                  skippedUnavailableCount++;
+                  continue;
+                }
                 const vId = item.contentDetails?.videoId || item.snippet?.resourceId?.videoId;
                 if (!vId) continue;
-                const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
-                const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
-                videoObjects.push({ id: vId, publishedAt: timestamp });
+                videoObjects.push({ id: vId, publishedAt: getSafeTimestamp(item) });
               }
               token = data.nextPageToken;
             } while (token);
@@ -2870,9 +2873,11 @@ let isSearchingCreator = false;
         } else {
           selectedIds.forEach(id => {
             const v = creatorVideos.find(item => (item.snippet?.resourceId?.videoId === id || item.contentDetails?.videoId === id || item.id === id));
-            const rawDate = v?.contentDetails?.videoPublishedAt || v?.snippet?.publishedAt || "";
-            const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
-            videoObjects.push({ id: id, publishedAt: timestamp });
+            if (isUnavailableVideo(v)) {
+              skippedUnavailableCount++;
+              return;
+            }
+            videoObjects.push({ id: id, publishedAt: getSafeTimestamp(v) });
           });
         }
 
@@ -2882,7 +2887,10 @@ let isSearchingCreator = false;
         }
 
         if (videoObjects.length === 0) {
-          setStatus("No valid videos could be retrieved from your selection.", false, "warning");
+          const emptyMsg = skippedUnavailableCount > 0
+            ? `Skipped ${skippedUnavailableCount} private/deleted video(s). No valid videos left to add.`
+            : "No valid videos could be retrieved from your selection.";
+          setStatus(emptyMsg, false, "warning");
           return;
         }
 
@@ -2892,10 +2900,14 @@ let isSearchingCreator = false;
         });
         let finalVideos = Array.from(uniqueMap.values());
 
-        if (sortOrder === "oldest_first") {
-          finalVideos.sort((a, b) => a.publishedAt - b.publishedAt);
-        } else if (sortOrder === "newest_first") {
-          finalVideos.sort((a, b) => b.publishedAt - a.publishedAt);
+        if (sortOrder === "oldest_first" || sortOrder === "newest_first") {
+          const ascending = sortOrder === "oldest_first";
+          finalVideos.sort((a, b) => {
+            if (a.publishedAt === null && b.publishedAt === null) return 0;
+            if (a.publishedAt === null) return 1;
+            if (b.publishedAt === null) return -1;
+            return ascending ? a.publishedAt - b.publishedAt : b.publishedAt - a.publishedAt;
+          });
         }
 
         const sub = getSubscriptionData();

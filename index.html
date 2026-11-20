@@ -585,8 +585,8 @@
             <input id="searchKeywordInput" type="text" placeholder="e.g. COD Zombies, Minecraft, Lethal Company" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-purple-500" />
           </div>
         </div>
-        <button onclick="executeCreatorSearch()" class="w-full bg-purple-600 hover:bg-purple-500 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.99] transition">
-          <span>🔍</span> Search Catalog
+       <button id="creatorSearchBtn" onclick="executeCreatorSearch()" class="w-full bg-purple-600 hover:bg-purple-500 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.99] transition">
+            <span>🔍</span> Search Catalog
         </button>
       </div>
 
@@ -2046,9 +2046,24 @@
     }
 
     // ================= VIEW 2: CREATOR EXPLORER LOGIC =================
+    
+let isSearchingCreator = false;
+
     async function executeCreatorSearch() {
+      if (isSearchingCreator) return;
+
       const rawInput = document.getElementById("searchCreatorInput").value.trim();
       if (!rawInput) return alert("Please enter a creator name or handle.");
+
+      const btn = document.getElementById("creatorSearchBtn");
+      const originalHtml = btn ? btn.innerHTML : "";
+
+      isSearchingCreator = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳</span> Searching...`;
+        btn.classList.add("opacity-60", "cursor-not-allowed");
+      }
 
       setStatus(`Finding creator "${rawInput}"...`, true);
       const authHeader = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
@@ -2121,9 +2136,15 @@
         }
       } catch (err) {
         setStatus("Search error: " + err.message, false);
+      } finally {
+        isSearchingCreator = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+          btn.classList.remove("opacity-60", "cursor-not-allowed");
+        }
       }
     }
-
     function toggleCreatorItemSelection(id) {
       if (selectedCreatorItemIds.has(id)) {
         selectedCreatorItemIds.delete(id);

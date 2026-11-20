@@ -1737,10 +1737,13 @@
 
     // ================= VIEW 1: LIBRARY LOGIC =================
     async function loadMyPlaylists(reset = false) {
+      const container = document.getElementById("libraryPlaylistsContainer");
+
       if (!accessToken) {
-        document.getElementById("libraryPlaylistsContainer").innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400">Browsing as Guest. Connect YouTube to load your library.</div>`;
+        container.innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-xs text-slate-400">Browsing as Guest. Connect YouTube to load your library.</div>`;
         return;
       }
+
       const refreshBtn = document.getElementById("refreshBtn");
       refreshBtn.innerText = "⏳ Refreshing playlists...";
       refreshBtn.disabled = true;
@@ -1757,22 +1760,30 @@
         if (nextLibraryPageToken) url += `&pageToken=${nextLibraryPageToken}`;
 
         const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-        
+
         if (res.status === 401) {
           disconnectAccount(true);
           return;
         }
 
         if (res.status === 403) {
-          const errData = await res.json();
+          const errData = await res.json().catch(() => ({}));
           const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
-          if (reason === "quotaExceeded") {
-            alert("Daily YouTube API quota reached (10,000 units). You can enter a personal Client ID in the drawer to continue right away.");
-          } else {
-            alert(`YouTube access denied: ${errData.error?.message || reason}`);
+          const msg = reason === "quotaExceeded"
+            ? "⚠️ Daily YouTube API quota reached. Enter a personal Client ID in the drawer or wait for the Midnight PST reset."
+            : `⚠️ YouTube access denied: ${errData.error?.message || reason}`;
+
+          setStatus(msg, false, "warning");
+          if (libraryPlaylists.length === 0) {
+            container.innerHTML = `<div class="bg-amber-950/40 border border-amber-800/70 rounded-xl p-4 text-center text-xs text-amber-200">${msg}</div>`;
           }
-          setStatus("API Quota limit reached.", false);
           return;
+        }
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.error?.message || `HTTP ${res.status}`;
+          throw new Error(`YouTube API error (${errMsg})`);
         }
 
         const data = await res.json();
@@ -1793,7 +1804,11 @@
         nextLibraryPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
         setStatus(`Loaded ${libraryPlaylists.length} playlists from your library.`, false);
       } catch (err) {
-        setStatus("Error loading library: " + err.message, false);
+        const msg = `Failed to load library: ${err.message}`;
+        setStatus(msg, false, "error");
+        if (libraryPlaylists.length === 0) {
+          container.innerHTML = `<div class="bg-rose-950/40 border border-rose-800 rounded-xl p-4 text-center text-xs text-rose-200">⚠️ ${msg}</div>`;
+        }
       } finally {
         refreshBtn.innerText = "Refresh";
         refreshBtn.disabled = false;

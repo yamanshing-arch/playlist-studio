@@ -2572,7 +2572,11 @@
       updateCreatorSelectedBadge();
     }
 
+    let isCreatingFromCreator = false;
+
     async function saveCreatorSelectionToPlaylist() {
+      if (isCreatingFromCreator) return;
+
       if (!accessToken) {
         alert("Please connect your YouTube account to compile playlists.");
         handleAuth();
@@ -2608,16 +2612,26 @@
 
       const sortOrder = document.getElementById("creatorSortOrder").value;
 
-      document.getElementById("creatorCreateBtn").disabled = true;
+      const btn = document.getElementById("creatorCreateBtn");
+      const originalText = btn.innerText;
+
+      isCreatingFromCreator = true;
+      btn.disabled = true;
+      btn.innerText = "⏳ Creating...";
+      btn.classList.add("opacity-60", "cursor-not-allowed");
+
       try {
         await executeBatchMerge([...selectedCreatorItemIds], title, sortOrder, creatorMode);
         selectedCreatorItemIds.clear();
         updateCreatorSelectedBadge();
         document.getElementById("creatorNewPlaylistTitle").value = "";
         renderCreatorList();
-        loadMyPlaylists(true);
+        await loadMyPlaylists(true);
       } finally {
-        document.getElementById("creatorCreateBtn").disabled = false;
+        isCreatingFromCreator = false;
+        btn.disabled = false;
+        btn.innerText = originalText;
+        btn.classList.remove("opacity-60", "cursor-not-allowed");
       }
     }
 

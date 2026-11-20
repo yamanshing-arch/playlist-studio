@@ -767,7 +767,7 @@
         </div>
       </div>
 
-      
+
 
       <!-- Subscription Tiers Grid -->
       <div class="space-y-3">
@@ -1208,28 +1208,45 @@
     }
 
     function updateQuotaMonitorUI() {
-      const isCustomId = localStorage.getItem("custom_yt_client_id");
-      const totalPool = isCustomId ? 100000 : 10000;
+      const isCustomId = !!localStorage.getItem("custom_yt_client_id");
+      const totalPool = isCustomId ? 10000 : 100000;
       const usage = getDailyCreationUsage();
       const remainingUnits = Math.max(0, totalPool - usage.units);
 
+      const sub = getSubscriptionData();
+      const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
+      const batchSize = plan.maxVideosPerBatch || 20;
+
       const quotaPoolTag = document.getElementById("quotaPoolTag");
-      if (quotaPoolTag) quotaPoolTag.innerText = isCustomId ? "Custom 100k Pool" : "Standard 10k Pool";
+      if (quotaPoolTag) {
+        quotaPoolTag.innerText = isCustomId ? "Custom Client (10k)" : "Studio 100k Pool";
+        quotaPoolTag.className = isCustomId
+          ? "text-[10px] font-mono text-purple-300 bg-purple-950 px-2 py-0.5 rounded border border-purple-800/60"
+          : "text-[10px] font-mono text-emerald-300 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-800/60";
+      }
 
       const quotaUnitDisplay = document.getElementById("quotaUnitDisplay");
       if (quotaUnitDisplay) quotaUnitDisplay.innerText = `~${remainingUnits.toLocaleString()} / ${totalPool.toLocaleString()}`;
 
       const quotaBarFill = document.getElementById("quotaBarFill");
       if (quotaBarFill) {
-        const pct = Math.round((remainingUnits / totalPool) * 100);
+        const pct = Math.max(0, Math.min(100, Math.round((remainingUnits / totalPool) * 100)));
         quotaBarFill.style.width = `${pct}%`;
+        if (pct <= 10) {
+          quotaBarFill.className = "bg-rose-500 h-2 rounded-full transition-all duration-300";
+        } else if (pct <= 25) {
+          quotaBarFill.className = "bg-amber-400 h-2 rounded-full transition-all duration-300";
+        } else {
+          quotaBarFill.className = "bg-gradient-to-r from-purple-500 to-emerald-400 h-2 rounded-full transition-all duration-300";
+        }
       }
 
       const quotaCapacityText = document.getElementById("quotaCapacityText");
       if (quotaCapacityText) {
-        const potentialPlaylists = Math.floor(remainingUnits / (50 + 20 * 50));
+        const unitsPerPlaylist = 50 + (batchSize * 50);
+        const potentialPlaylists = Math.floor(remainingUnits / unitsPerPlaylist);
         const maxSingleRunVids = Math.max(0, Math.floor((remainingUnits - 50) / 50));
-        quotaCapacityText.innerHTML = `Sufficient quota to create <strong>~${potentialPlaylists} playlists</strong> (at 20 vids each) or <strong>1 large collection</strong> with up to <strong>${maxSingleRunVids} videos</strong>.`;
+        quotaCapacityText.innerHTML = `Sufficient quota to create <strong>~${potentialPlaylists.toLocaleString()} playlists</strong> (at ${batchSize} vids each) or <strong>1 large collection</strong> with up to <strong>${maxSingleRunVids.toLocaleString()} videos</strong>.`;
       }
     }
 

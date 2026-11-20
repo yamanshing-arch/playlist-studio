@@ -2088,12 +2088,47 @@
     
 let isSearchingCreator = false;
 
+    function parseCreatorInput(raw) {
+      let cleaned = (raw || "").trim();
+
+      // Match direct /channel/UC... URLs or raw 24-char Channel IDs
+      const channelIdMatch = cleaned.match(/(?:youtube\.com\/channel\/|^)(UC[a-zA-Z0-9_-]{22})(?:[/?#&]|$)/i);
+      if (channelIdMatch) {
+        return { type: "id", value: channelIdMatch[1] };
+      }
+
+      // Match /@handle URLs (with or without /videos, /playlists, query params)
+      const urlHandleMatch = cleaned.match(/youtube\.com\/@([^/?#&\s]+)/i);
+      if (urlHandleMatch) {
+        return { type: "handle", value: decodeURIComponent(urlHandleMatch[1]) };
+      }
+
+      // Match legacy /c/name or /user/name URLs
+      const legacyUrlMatch = cleaned.match(/youtube\.com\/(?:c|user)\/([^/?#&\s]+)/i);
+      if (legacyUrlMatch) {
+        return { type: "query", value: decodeURIComponent(legacyUrlMatch[1]) };
+      }
+
+      // Match direct @handle input
+      if (cleaned.startsWith("@")) {
+        return { type: "handle", value: cleaned.replace(/^@+/, "").split(/[/?#&\s]/)[0] };
+      }
+
+      return { type: "query", value: cleaned };
+    }
+
     async function executeCreatorSearch() {
       if (isSearchingCreator) return;
 
       const rawInput = document.getElementById("searchCreatorInput").value.trim();
       if (!rawInput) {
-        setStatus("Please enter a creator name or handle.", false, "warning");
+        setStatus("Please enter a creator name, @handle, or channel URL.", false, "warning");
+        return;
+      }
+
+      const parsed = parseCreatorInput(rawInput);
+      if (!parsed.value) {
+        setStatus("Could not read a valid channel name or handle from that input.", false, "warning");
         return;
       }
 
@@ -2107,7 +2142,7 @@ let isSearchingCreator = false;
         btn.classList.add("opacity-60", "cursor-not-allowed");
       }
 
-      setStatus(`Finding creator "${rawInput}"...`, true);
+      setStatus(`Finding creator "${parsed.value}"...`, true);
       const authHeader = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 
       const handleApiError = async (res) => {
@@ -2132,30 +2167,47 @@ let isSearchingCreator = false;
       };
 
       try {
-        let channelId = null;
-        const cleanName = rawInput.replace(/^@/, '');
+        currentCreatorData = null;
 
-        const handleRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forHandle=${encodeURIComponent(cleanName)}`, {
-          headers: authHeader
-        });
-        if (await handleApiError(handleRes)) return;
+        // 1. Direct Channel ID lookup (1 quota unit)
+        if (parsed.type === "id") {
+          const idRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${encodeURIComponent(parsed.value)}`, {
+            headers: authHeader
+          });
+          if (await handleApiError(idRes)) return;
 
-        const handleData = await handleRes.json();
-        if (handleData.items && handleData.items.length > 0) {
-          currentCreatorData = handleData.items[0];
-          channelId = currentCreatorData.id;
-        } else {
-          const chRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(rawInput)}&maxResults=1`, {
+          const idData = await idRes.json();
+          if (idData.items && idData.items.length > 0) {
+            currentCreatorData = idData.items[0];
+          }
+        }
+
+        // 2. Handle lookup (1 quota unit) if input is a @handle or single-word name
+        if (!currentCreatorData && (parsed.type === "handle" || (parsed.type === "query" && !parsed.value.includes(" ")))) {
+          const handleRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forHandle=${encodeURIComponent(parsed.value)}`, {
+            headers: authHeader
+          });
+          if (await handleApiError(handleRes)) return;
+
+          const handleData = await handleRes.json();
+          if (handleData.items && handleData.items.length > 0) {
+            currentCreatorData = handleData.items[0];
+          }
+        }
+
+        // 3. Fallback to channel search (100 quota units)
+        if (!currentCreatorData) {
+          const chRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(parsed.value)}&maxResults=1`, {
             headers: authHeader
           });
           if (await handleApiError(chRes)) return;
 
           const chData = await chRes.json();
           if (!chData.items || chData.items.length === 0) {
-            setStatus(`No YouTube channel found matching "${rawInput}".`, false, "warning");
+            setStatus(`No YouTube channel found matching "${parsed.value}".`, false, "warning");
             return;
           }
-          channelId = chData.items[0].id?.channelId || chData.items[0].snippet?.channelId;
+          const channelId = chData.items[0].id?.channelId || chData.items[0].snippet?.channelId;
 
           const detailsRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${channelId}`, {
             headers: authHeader

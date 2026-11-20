@@ -2771,173 +2771,208 @@ let isSearchingCreator = false;
       progressFill.style.width = "0%";
       progressTitle.innerText = `Collecting Videos...`;
       progressSubtitle.innerText = `Gathering video information and timestamps...`;
+      progressCount.innerText = `0 of 0 videos inserted`;
 
-      let videoObjects = [];
+      try {
+        let videoObjects = [];
 
-      if (sourceType === "playlists") {
-        for (const plId of selectedIds) {
-          if (isMergeCancelled) break;
-          let token = "";
-          do {
+        if (sourceType === "playlists") {
+          for (const plId of selectedIds) {
             if (isMergeCancelled) break;
-            let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${plId}&maxResults=50`;
-            if (token) url += `&pageToken=${token}`;
-            const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-            
-            if (res.status === 401) {
-              progressModal.classList.add("hidden");
-              disconnectAccount(true);
-              return;
-            }
-            if (res.status === 403) {
-              progressModal.classList.add("hidden");
-              alert("YouTube API daily quota limit reached.");
-              return;
-            }
+            let token = "";
+            do {
+              if (isMergeCancelled) break;
+              let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${plId}&maxResults=50`;
+              if (token) url += `&pageToken=${token}`;
+              const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
 
-            const data = await res.json();
-            for (const item of (data.items || [])) {
-              const vId = item.contentDetails?.videoId || item.snippet?.resourceId?.videoId;
-              if (!vId) continue;
-              const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
-              const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
-              videoObjects.push({ id: vId, publishedAt: timestamp });
-            }
-            token = data.nextPageToken;
-          } while (token);
+              if (res.status === 401) {
+                disconnectAccount(true);
+                return;
+              }
+              if (res.status === 403) {
+                const errData = await res.json().catch(() => ({}));
+                const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
+                const msg = reason === "quotaExceeded"
+                  ? "⚠️ Daily YouTube API quota reached. Enter a personal Client ID in the drawer or wait for the Midnight PST reset."
+                  : `⚠️ YouTube access denied: ${errData.error?.message || reason}`;
+                setStatus(msg, false, "warning");
+                return;
+              }
+              if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error?.message || `HTTP ${res.status} while reading playlist`);
+              }
+
+              const data = await res.json();
+              for (const item of (data.items || [])) {
+                const vId = item.contentDetails?.videoId || item.snippet?.resourceId?.videoId;
+                if (!vId) continue;
+                const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
+                const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
+                videoObjects.push({ id: vId, publishedAt: timestamp });
+              }
+              token = data.nextPageToken;
+            } while (token);
+          }
+        } else {
+          selectedIds.forEach(id => {
+            const v = creatorVideos.find(item => (item.snippet?.resourceId?.videoId === id || item.contentDetails?.videoId === id || item.id === id));
+            const rawDate = v?.contentDetails?.videoPublishedAt || v?.snippet?.publishedAt || "";
+            const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
+            videoObjects.push({ id: id, publishedAt: timestamp });
+          });
         }
-      } else {
-        selectedIds.forEach(id => {
-          const v = creatorVideos.find(item => (item.snippet?.resourceId?.videoId === id || item.contentDetails?.videoId === id || item.id === id));
-          const rawDate = v?.contentDetails?.videoPublishedAt || v?.snippet?.publishedAt || "";
-          const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
-          videoObjects.push({ id: id, publishedAt: timestamp });
-        });
-      }
 
-      if (isMergeCancelled) {
-        progressModal.classList.add("hidden");
-        setStatus("Process stopped before playlist creation.", false);
-        return;
-      }
-
-      if (videoObjects.length === 0) {
-        progressModal.classList.add("hidden");
-        alert("No valid videos could be retrieved from your selection.");
-        return;
-      }
-
-      const uniqueMap = new Map();
-      videoObjects.forEach(vo => {
-        if (!uniqueMap.has(vo.id)) uniqueMap.set(vo.id, vo);
-      });
-      let finalVideos = Array.from(uniqueMap.values());
-
-      if (sortOrder === "oldest_first") {
-        finalVideos.sort((a, b) => a.publishedAt - b.publishedAt);
-      } else if (sortOrder === "newest_first") {
-        finalVideos.sort((a, b) => b.publishedAt - a.publishedAt);
-      }
-
-      const sub = getSubscriptionData();
-      const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
-      const CHUNK_SIZE = plan.maxVideosPerBatch || 20;
-
-      let chunks = [];
-
-      if (finalVideos.length > CHUNK_SIZE) {
-        const numParts = Math.ceil(finalVideos.length / CHUNK_SIZE);
-        const autoSplit = confirm(`You selected ${finalVideos.length} videos. Under your ${plan.name}, batches are sectioned into maximum ${CHUNK_SIZE} videos per playlist to protect your daily quota.\n\nClick OK to automatically split this into ${numParts} chronological parts (Part 1, Part 2, etc.), or Cancel to abort.`);
-        if (!autoSplit) {
-          progressModal.classList.add("hidden");
+        if (isMergeCancelled) {
+          setStatus("Process stopped before playlist creation.", false, "warning");
           return;
         }
 
-        for (let i = 0; i < finalVideos.length; i += CHUNK_SIZE) {
-          chunks.push({
-            partNum: Math.floor(i / CHUNK_SIZE) + 1,
-            videos: finalVideos.slice(i, i + CHUNK_SIZE)
-          });
+        if (videoObjects.length === 0) {
+          setStatus("No valid videos could be retrieved from your selection.", false, "warning");
+          return;
         }
-      } else {
-        chunks.push({ partNum: 0, videos: finalVideos });
-      }
 
-      let createdPlaylists = [];
-      let totalInsertedOverall = 0;
-
-      for (const chunk of chunks) {
-        if (isMergeCancelled) break;
-
-        const partTitle = chunk.partNum > 0 ? `${newTitle} (Part ${chunk.partNum})` : newTitle;
-        progressTitle.innerText = `Creating "${partTitle}"`;
-        progressSubtitle.innerText = `Registering playlist with YouTube...`;
-
-        const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            snippet: { title: partTitle, description: "Compiled with chronological sorting via Playlist Studio." },
-            status: { privacyStatus: "private" }
-          })
+        const uniqueMap = new Map();
+        videoObjects.forEach(vo => {
+          if (!uniqueMap.has(vo.id)) uniqueMap.set(vo.id, vo);
         });
+        let finalVideos = Array.from(uniqueMap.values());
 
-        if (!createRes.ok) {
-          const errInfo = await createRes.json();
-          alert(`YouTube API Error: ${errInfo.error?.message || "Failed to create playlist"}`);
-          break;
+        if (sortOrder === "oldest_first") {
+          finalVideos.sort((a, b) => a.publishedAt - b.publishedAt);
+        } else if (sortOrder === "newest_first") {
+          finalVideos.sort((a, b) => b.publishedAt - a.publishedAt);
         }
 
-        const createdData = await createRes.json();
-        const targetId = createdData.id;
-        createdPlaylists.push({ title: partTitle, id: targetId, count: chunk.videos.length });
+        const sub = getSubscriptionData();
+        const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
+        const CHUNK_SIZE = plan.maxVideosPerBatch || 20;
 
-        if (sourceType === "playlists") {
-          saveTrackedSource(targetId, { type: "playlists", sourceIds: selectedIds, title: newTitle });
-        } else if (activeInspectedPlaylist) {
-          saveTrackedSource(targetId, { type: "playlists", sourceIds: [activeInspectedPlaylist.id], title: newTitle });
-        } else if (currentCreatorData?.contentDetails?.relatedPlaylists?.uploads) {
-          saveTrackedSource(targetId, { type: "channel_uploads", sourceIds: [currentCreatorData.contentDetails.relatedPlaylists.uploads], title: newTitle });
-        }
+        let chunks = [];
 
-        let insertedInChunk = 0;
-        for (const item of chunk.videos) {
-          if (isMergeCancelled) break;
-
-          const success = await insertVideoToPlaylist(targetId, item.id);
-          if (success) {
-            insertedInChunk++;
-            totalInsertedOverall++;
+        if (finalVideos.length > CHUNK_SIZE) {
+          const numParts = Math.ceil(finalVideos.length / CHUNK_SIZE);
+          const autoSplit = confirm(`You selected ${finalVideos.length} videos. Under your ${plan.name}, batches are sectioned into maximum ${CHUNK_SIZE} videos per playlist to protect your daily quota.\n\nClick OK to automatically split this into ${numParts} chronological parts (Part 1, Part 2, etc.), or Cancel to abort.`);
+          if (!autoSplit) {
+            setStatus("Playlist creation cancelled.", false);
+            return;
           }
 
-          const pct = Math.round((totalInsertedOverall / finalVideos.length) * 100);
-          progressFill.style.width = `${pct}%`;
-          progressSubtitle.innerText = `Adding to ${partTitle} (${pct}%)...`;
-          progressCount.innerText = `${totalInsertedOverall} of ${finalVideos.length} total videos added`;
+          for (let i = 0; i < finalVideos.length; i += CHUNK_SIZE) {
+            chunks.push({
+              partNum: Math.floor(i / CHUNK_SIZE) + 1,
+              videos: finalVideos.slice(i, i + CHUNK_SIZE)
+            });
+          }
+        } else {
+          chunks.push({ partNum: 0, videos: finalVideos });
         }
+
+        let createdPlaylists = [];
+        let totalInsertedOverall = 0;
+        let apiErrorMsg = null;
+
+        for (const chunk of chunks) {
+          if (isMergeCancelled) break;
+
+          const partTitle = chunk.partNum > 0 ? `${newTitle} (Part ${chunk.partNum})` : newTitle;
+          progressTitle.innerText = `Creating "${partTitle}"`;
+          progressSubtitle.innerText = `Registering playlist with YouTube...`;
+
+          const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              snippet: { title: partTitle, description: "Compiled with chronological sorting via Playlist Studio." },
+              status: { privacyStatus: "private" }
+            })
+          });
+
+          if (createRes.status === 401) {
+            disconnectAccount(true);
+            return;
+          }
+
+          if (!createRes.ok) {
+            const errInfo = await createRes.json().catch(() => ({}));
+            const reason = errInfo.error?.errors?.[0]?.reason || "";
+            apiErrorMsg = reason === "quotaExceeded"
+              ? "⚠️ Daily YouTube API quota reached while creating playlists."
+              : `YouTube API Error: ${errInfo.error?.message || `HTTP ${createRes.status}`}`;
+            setStatus(apiErrorMsg, false, reason === "quotaExceeded" ? "warning" : "error");
+            break;
+          }
+
+          const createdData = await createRes.json();
+          const targetId = createdData.id;
+          createdPlaylists.push({ title: partTitle, id: targetId, count: chunk.videos.length });
+
+          if (sourceType === "playlists") {
+            saveTrackedSource(targetId, { type: "playlists", sourceIds: selectedIds, title: newTitle });
+          } else if (activeInspectedPlaylist) {
+            saveTrackedSource(targetId, { type: "playlists", sourceIds: [activeInspectedPlaylist.id], title: newTitle });
+          } else if (currentCreatorData?.contentDetails?.relatedPlaylists?.uploads) {
+            saveTrackedSource(targetId, { type: "channel_uploads", sourceIds: [currentCreatorData.contentDetails.relatedPlaylists.uploads], title: newTitle });
+          }
+
+          let insertedInChunk = 0;
+          for (const item of chunk.videos) {
+            if (isMergeCancelled) break;
+
+            const success = await insertVideoToPlaylist(targetId, item.id);
+            if (success) {
+              insertedInChunk++;
+              totalInsertedOverall++;
+            }
+
+            const pct = Math.round((totalInsertedOverall / finalVideos.length) * 100);
+            progressFill.style.width = `${pct}%`;
+            progressSubtitle.innerText = `Adding to ${partTitle} (${pct}%)...`;
+            progressCount.innerText = `${totalInsertedOverall} of ${finalVideos.length} total videos added`;
+          }
+        }
+
+        if (totalInsertedOverall > 0) {
+          recordCreationUsage(totalInsertedOverall);
+        }
+
+        if (createdPlaylists.length === 0) {
+          if (!apiErrorMsg) setStatus("No playlists were created.", false, "warning");
+          return;
+        }
+
+        const linksContainer = document.getElementById("successLinksContainer");
+        linksContainer.innerHTML = "";
+
+        document.getElementById("successModalHeading").innerText = isMergeCancelled
+          ? "Process Stopped"
+          : (apiErrorMsg ? "Partially Completed" : "Playlists Ready!");
+        document.getElementById("successModalDetail").innerText = isMergeCancelled
+          ? `Stopped early. Added ${totalInsertedOverall} videos across created collections.`
+          : (apiErrorMsg
+            ? `Stopped due to an API error after adding ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s).`
+            : `Successfully compiled ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s) in chronological order.`);
+
+        createdPlaylists.forEach(pl => {
+          const link = document.createElement("a");
+          link.href = `https://www.youtube.com/playlist?list=${pl.id}`;
+          link.target = "_blank";
+          link.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between shadow-md transition";
+          link.innerHTML = `<span>▶ ${pl.title}</span><span class="text-[10px] opacity-80">${pl.count} vids</span>`;
+          linksContainer.appendChild(link);
+        });
+
+        document.getElementById("successModal").classList.remove("hidden");
+        if (!apiErrorMsg) {
+          setStatus(`Compiled ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s).`, false);
+        }
+      } catch (err) {
+        setStatus(`Merge failed: ${err.message}`, false, "error");
+      } finally {
+        progressModal.classList.add("hidden");
       }
-
-      recordCreationUsage(totalInsertedOverall);
-      progressModal.classList.add("hidden");
-
-      const linksContainer = document.getElementById("successLinksContainer");
-      linksContainer.innerHTML = "";
-
-      document.getElementById("successModalHeading").innerText = isMergeCancelled ? "Process Stopped" : "Playlists Ready!";
-      document.getElementById("successModalDetail").innerText = isMergeCancelled 
-        ? `Stopped early. Added ${totalInsertedOverall} videos across created collections.`
-        : `Successfully compiled ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s) in chronological order.`;
-
-      createdPlaylists.forEach(pl => {
-        const link = document.createElement("a");
-        link.href = `https://www.youtube.com/playlist?list=${pl.id}`;
-        link.target = "_blank";
-        link.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between shadow-md transition";
-        link.innerHTML = `<span>▶ ${pl.title}</span><span class="text-[10px] opacity-80">${pl.count} vids</span>`;
-        linksContainer.appendChild(link);
-      });
-
-      document.getElementById("successModal").classList.remove("hidden");
     }
 
     async function insertVideoToPlaylist(playlistId, videoId) {

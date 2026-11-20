@@ -2295,100 +2295,140 @@ let isSearchingCreator = false;
       fetchNextCreatorBatch();
     }
 
-    async function fetchNextCreatorBatch() {
+   async function fetchNextCreatorBatch() {
+      if (!currentCreatorData) return;
+
       const keyword = document.getElementById("searchKeywordInput").value.trim();
       const loadMoreBtn = document.getElementById("loadMoreCreatorBtn");
+      const listEl = document.getElementById("creatorItemsList");
       const authHeader = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 
-      if (creatorMode === "playlists") {
-        setStatus(`Loading creator playlists...`, true);
-        let url = `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${currentCreatorData.id}&maxResults=50`;
-        if (nextCreatorPlaylistsPageToken) url += `&pageToken=${nextCreatorPlaylistsPageToken}`;
+      const isCurrentListEmpty = () =>
+        creatorMode === "playlists" ? creatorPlaylists.length === 0 : creatorVideos.length === 0;
 
-        const res = await fetch(url, { headers: authHeader });
+      const handleApiError = async (res) => {
         if (res.status === 401 && accessToken) {
           disconnectAccount(true);
-          return;
+          return true;
         }
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
+          const msg = reason === "quotaExceeded"
+            ? "⚠️ Daily YouTube API quota reached. Enter a personal Client ID in the drawer or wait for the Midnight PST reset."
+            : `⚠️ YouTube access denied: ${errData.error?.message || reason}`;
+          setStatus(msg, false, "warning");
+          if (isCurrentListEmpty()) {
+            listEl.innerHTML = `<div class="bg-amber-950/40 border border-amber-800/70 rounded-xl p-4 text-center text-xs text-amber-200">${msg}</div>`;
+          }
+          return true;
+        }
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
+        return false;
+      };
 
-        const data = await res.json();
-        nextCreatorPlaylistsPageToken = data.nextPageToken || null;
+      loadMoreBtn.disabled = true;
 
-        const rawItems = data.items || [];
-        const kw = (keyword || "").trim().toLowerCase();
-        const items = kw 
-          ? rawItems.filter(p => (p.snippet?.title || "").toLowerCase().includes(kw))
-          : rawItems;
-        creatorPlaylists = creatorPlaylists.concat(items);
-        renderCreatorList();
-
-        nextCreatorPlaylistsPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
-        loadMoreBtn.innerText = "⬇️ Load More Playlists (Next 50)";
-        setStatus(`Loaded ${creatorPlaylists.length} playlists.`, false);
-      } else {
-        if (activeInspectedPlaylist) {
-          setStatus(`Loading episodes from "${activeInspectedPlaylist.title}"...`, true);
-          let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${activeInspectedPlaylist.id}&maxResults=50`;
-          if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
-
-          const res = await fetch(url, { headers: authHeader });
-          if (res.status === 401 && accessToken) { disconnectAccount(true); return; }
-
-          const data = await res.json();
-          nextCreatorVideosPageToken = data.nextPageToken || null;
-
-          creatorVideos = creatorVideos.concat(data.items || []);
-          renderCreatorList();
-
-          nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
-          loadMoreBtn.innerText = "⬇️ Load More Episodes (Next 50)";
-          setStatus(`Loaded ${creatorVideos.length} videos from "${activeInspectedPlaylist.title}".`, false);
-
-        } else if (keyword) {
-          setStatus(`Searching all ${totalCreatorVideosCount} videos for "${keyword}"...`, true);
-          let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${currentCreatorData.id}&q=${encodeURIComponent(keyword)}&type=video&maxResults=50`;
-          if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
+      try {
+        if (creatorMode === "playlists") {
+          setStatus(`Loading creator playlists...`, true);
+          let url = `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${currentCreatorData.id}&maxResults=50`;
+          if (nextCreatorPlaylistsPageToken) url += `&pageToken=${nextCreatorPlaylistsPageToken}`;
 
           const res = await fetch(url, { headers: authHeader });
-          if (res.status === 401 && accessToken) { disconnectAccount(true); return; }
+          if (await handleApiError(res)) return;
 
           const data = await res.json();
-          nextCreatorVideosPageToken = data.nextPageToken || null;
+          nextCreatorPlaylistsPageToken = data.nextPageToken || null;
 
-          const transformed = (data.items || []).map(item => ({
-            id: item.id.videoId,
-            snippet: item.snippet,
-            contentDetails: { videoId: item.id.videoId, videoPublishedAt: item.snippet.publishedAt }
-          }));
-
-          creatorVideos = creatorVideos.concat(transformed);
+          const rawItems = data.items || [];
+          const kw = (keyword || "").trim().toLowerCase();
+          const items = kw
+            ? rawItems.filter(p => (p.snippet?.title || "").toLowerCase().includes(kw))
+            : rawItems;
+          creatorPlaylists = creatorPlaylists.concat(items);
           renderCreatorList();
 
-          nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
-          loadMoreBtn.innerText = "⬇️ Load More Matching Videos";
-          setStatus(`Found ${creatorVideos.length} videos matching "${keyword}".`, false);
-
+          nextCreatorPlaylistsPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+          loadMoreBtn.innerText = "⬇️ Load More Playlists (Next 50)";
+          setStatus(`Loaded ${creatorPlaylists.length} playlists.`, false);
         } else {
-          setStatus(`Loading recent uploads...`, true);
-          const uploadsId = currentCreatorData.contentDetails?.relatedPlaylists?.uploads;
-          if (!uploadsId) return setStatus("Could not retrieve channel uploads feed.", false);
+          if (activeInspectedPlaylist) {
+            setStatus(`Loading episodes from "${activeInspectedPlaylist.title}"...`, true);
+            let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${activeInspectedPlaylist.id}&maxResults=50`;
+            if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
 
-          let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=50`;
-          if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
+            const res = await fetch(url, { headers: authHeader });
+            if (await handleApiError(res)) return;
 
-          const res = await fetch(url, { headers: authHeader });
-          if (res.status === 401 && accessToken) { disconnectAccount(true); return; }
+            const data = await res.json();
+            nextCreatorVideosPageToken = data.nextPageToken || null;
 
-          const data = await res.json();
-          nextCreatorVideosPageToken = data.nextPageToken || null;
+            creatorVideos = creatorVideos.concat(data.items || []);
+            renderCreatorList();
 
-          creatorVideos = creatorVideos.concat(data.items || []);
-          renderCreatorList();
+            nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+            loadMoreBtn.innerText = "⬇️ Load More Episodes (Next 50)";
+            setStatus(`Loaded ${creatorVideos.length} videos from "${activeInspectedPlaylist.title}".`, false);
+          } else if (keyword) {
+            setStatus(`Searching all ${totalCreatorVideosCount} videos for "${keyword}"...`, true);
+            let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${currentCreatorData.id}&q=${encodeURIComponent(keyword)}&type=video&maxResults=50`;
+            if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
 
-          nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
-          loadMoreBtn.innerText = "⬇️ Load More Videos (Next 50)";
-          setStatus(`Displaying ${creatorVideos.length} of ${totalCreatorVideosCount.toLocaleString()} uploads.`, false);
+            const res = await fetch(url, { headers: authHeader });
+            if (await handleApiError(res)) return;
+
+            const data = await res.json();
+            nextCreatorVideosPageToken = data.nextPageToken || null;
+
+            const transformed = (data.items || []).map(item => ({
+              id: item.id.videoId,
+              snippet: item.snippet,
+              contentDetails: { videoId: item.id.videoId, videoPublishedAt: item.snippet.publishedAt }
+            }));
+
+            creatorVideos = creatorVideos.concat(transformed);
+            renderCreatorList();
+
+            nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+            loadMoreBtn.innerText = "⬇️ Load More Matching Videos";
+            setStatus(`Found ${creatorVideos.length} videos matching "${keyword}".`, false);
+          } else {
+            setStatus(`Loading recent uploads...`, true);
+            const uploadsId = currentCreatorData.contentDetails?.relatedPlaylists?.uploads;
+            if (!uploadsId) {
+              setStatus("Could not retrieve channel uploads feed.", false, "warning");
+              return;
+            }
+
+            let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=50`;
+            if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
+
+            const res = await fetch(url, { headers: authHeader });
+            if (await handleApiError(res)) return;
+
+            const data = await res.json();
+            nextCreatorVideosPageToken = data.nextPageToken || null;
+
+            creatorVideos = creatorVideos.concat(data.items || []);
+            renderCreatorList();
+
+            nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
+            loadMoreBtn.innerText = "⬇️ Load More Videos (Next 50)";
+            setStatus(`Displaying ${creatorVideos.length} of ${totalCreatorVideosCount.toLocaleString()} uploads.`, false);
+          }
         }
+      } catch (err) {
+        const msg = `Failed to load creator content: ${err.message}`;
+        setStatus(msg, false, "error");
+        if (isCurrentListEmpty()) {
+          listEl.innerHTML = `<div class="bg-rose-950/40 border border-rose-800 rounded-xl p-4 text-center text-xs text-rose-200">⚠️ ${msg}</div>`;
+        }
+      } finally {
+        loadMoreBtn.disabled = false;
       }
     }
 

@@ -1137,11 +1137,11 @@
       const descNote = document.getElementById("planDescNote");
       if (descNote) {
         if (planKey === "developer") {
-          descNote.innerText = "Developer VIP Access: Uncapped playlist creation, 50-video batches, automatic splitting, and unlimited delta syncing.";
+          descNote.innerText = "Developer VIP Access: Uncapped playlist creation, 200-video batches, automatic splitting, and unlimited delta syncing.";
         } else if (planKey === "starter") {
           descNote.innerText = "Includes up to 2 created playlists per day (capped at 20 videos each) with full Multi-POV scan & chronological sequencing.";
         } else {
-          descNote.innerText = "Full Studio Access: Up to 50 videos per batch, automatic multi-part batch splitting, and smart delta syncing.";
+          descNote.innerText = "Full Studio Access: Up to 100 videos per batch, automatic multi-part batch splitting, and smart delta syncing.";
         }
       }
 
@@ -1166,6 +1166,8 @@
           daysLeftLabel.className = days <= 3 ? "text-xs text-rose-400 font-bold" : "text-xs text-emerald-400 font-semibold";
         }
       }
+
+      updateQuotaMonitorUI();
     }
 
     function selectPlan(planKey) {

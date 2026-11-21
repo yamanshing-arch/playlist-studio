@@ -1603,78 +1603,113 @@
     }
 
     async function mergeAndCreateChronoPlaylist(discoveredPlaylists, targetPlaylistTitle, userAccessToken) {
+      const sub = getSubscriptionData();
+      const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
+      const usage = getDailyCreationUsage();
+
+      if (usage.count >= plan.maxPlaylistsPerDay) {
+        throw new Error(`Daily creation limit reached (${plan.maxPlaylistsPerDay} playlists/day on ${plan.name}).`);
+      }
+
       const headers = {
         Authorization: `Bearer ${userAccessToken}`,
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json"
+      };
+
+      const checkApiRes = async (res) => {
+        if (res.status === 401) {
+          disconnectAccount(true);
+          throw new Error("Session expired. Please reconnect your YouTube account.");
+        }
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
+          throw new Error(
+            reason === "quotaExceeded"
+              ? "Daily YouTube API quota reached. Try again after Midnight PST."
+              : `YouTube access denied: ${errData.error?.message || reason}`
+          );
+        }
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
       };
 
       const allVideos = [];
 
       for (const pl of discoveredPlaylists) {
-        let nextPageToken = '';
+        let nextPageToken = "";
         do {
-          const res = await fetch(
-            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${pl.playlistId}&maxResults=50&pageToken=${nextPageToken}`,
-            { headers }
-          );
+          let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${pl.playlistId}&maxResults=50`;
+          if (nextPageToken) url += `&pageToken=${nextPageToken}`;
+          const res = await fetch(url, { headers });
+          await checkApiRes(res);
+
           const data = await res.json();
-          
-          if (data.items) {
-            data.items.forEach(item => {
-              allVideos.push({
-                videoId: item.snippet.resourceId.videoId,
-                title: item.snippet.title,
-                channel: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
-                publishedAt: item.snippet.publishedAt
-              });
+          for (const item of (data.items || [])) {
+            if (isUnavailableVideo(item)) continue;
+            const videoId = item.contentDetails?.videoId || item.snippet?.resourceId?.videoId;
+            if (!videoId) continue;
+            allVideos.push({
+              videoId,
+              title: item.snippet?.title || "",
+              channel: item.snippet?.videoOwnerChannelTitle || item.snippet?.channelTitle || "",
+              publishedAt: getSafeTimestamp(item)
             });
           }
-          nextPageToken = data.nextPageToken || '';
+          nextPageToken = data.nextPageToken || "";
         } while (nextPageToken);
       }
 
-      allVideos.sort((a, b) => new Date(a.publishedAt) - new Date(b.publishedAt));
+      const uniqueMap = new Map();
+      allVideos.forEach(v => {
+        if (!uniqueMap.has(v.videoId)) uniqueMap.set(v.videoId, v);
+      });
+      const sortedVideos = Array.from(uniqueMap.values()).sort((a, b) => {
+        if (a.publishedAt === null && b.publishedAt === null) return 0;
+        if (a.publishedAt === null) return 1;
+        if (b.publishedAt === null) return -1;
+        return a.publishedAt - b.publishedAt;
+      });
 
-      const createPlRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,status`, {
-        method: 'POST',
+      if (sortedVideos.length === 0) {
+        throw new Error("No valid public videos found in the discovered playlists.");
+      }
+
+      const createPlRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+        method: "POST",
         headers,
         body: JSON.stringify({
           snippet: {
             title: targetPlaylistTitle,
             description: `Chronological Multi-POV playlist created via Playlist Studio.\nSources:\n` +
-              discoveredPlaylists.map(p => `- ${p.channelTitle}: ${p.title}`).join('\n')
+              discoveredPlaylists.map(p => `- ${p.channelTitle}: ${p.title}`).join("\n")
           },
-          status: { privacyStatus: 'unlisted' }
+          status: { privacyStatus: "unlisted" }
         })
       });
-      const createdPlaylist = await createPlRes.json();
-      const masterPlaylistId = createdPlaylist.id;
+      await checkApiRes(createPlRes);
 
-      for (const vid of allVideos) {
-        await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            snippet: {
-              playlistId: masterPlaylistId,
-              resourceId: {
-                kind: 'youtube#video',
-                videoId: vid.videoId
-              }
-            }
-          })
-        });
+      const createdPlaylist = await createPlRes.json();
+      const masterPlaylistId = createdPlaylist?.id;
+      if (!masterPlaylistId) throw new Error("YouTube did not return a playlist ID.");
+
+      let inserted = 0;
+      for (const vid of sortedVideos) {
+        const ok = await insertVideoToPlaylist(masterPlaylistId, vid.videoId);
+        if (ok) inserted++;
       }
 
-      recordCreationUsage(allVideos.length);
+      if (inserted > 0) {
+        recordCreationUsage(inserted);
+      }
 
-      const syncRecord = {
-        masterPlaylistId,
-        sourcePlaylists: discoveredPlaylists.map(p => p.playlistId),
-        syncedVideoIds: allVideos.map(v => v.videoId),
-        lastSyncTime: new Date().toISOString()
-      };
-      localStorage.setItem(`pov_sync_${masterPlaylistId}`, JSON.stringify(syncRecord));
+      saveTrackedSource(masterPlaylistId, {
+        type: "playlists",
+        sourceIds: discoveredPlaylists.map(p => p.playlistId),
+        title: targetPlaylistTitle
+      });
 
       return masterPlaylistId;
     }

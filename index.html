@@ -2320,7 +2320,7 @@ let isSearchingCreator = false;
 
         // 1. Direct Channel ID lookup (1 quota unit)
         if (parsed.type === "id") {
-          const idRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${encodeURIComponent(parsed.value)}`, {
+          const idRes = await fetch(withGuestKey(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${encodeURIComponent(parsed.value)}`), {
             headers: authHeader
           });
           if (await handleApiError(idRes)) return;
@@ -2333,7 +2333,7 @@ let isSearchingCreator = false;
 
         // 2. Handle lookup (1 quota unit) if input is a @handle or single-word name
         if (!currentCreatorData && (parsed.type === "handle" || (parsed.type === "query" && !parsed.value.includes(" ")))) {
-          const handleRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forHandle=${encodeURIComponent(parsed.value)}`, {
+          const handleRes = await fetch(withGuestKey(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forHandle=${encodeURIComponent(parsed.value)}`), {
             headers: authHeader
           });
           if (await handleApiError(handleRes)) return;
@@ -2346,7 +2346,7 @@ let isSearchingCreator = false;
 
         // 3. Fallback to channel search (100 quota units)
         if (!currentCreatorData) {
-          const chRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(parsed.value)}&maxResults=1`, {
+          const chRes = await fetch(withGuestKey(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(parsed.value)}&maxResults=1`), {
             headers: authHeader
           });
           if (await handleApiError(chRes)) return;
@@ -2358,7 +2358,7 @@ let isSearchingCreator = false;
           }
           const channelId = chData.items[0].id?.channelId || chData.items[0].snippet?.channelId;
 
-          const detailsRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${channelId}`, {
+          const detailsRes = await fetch(withGuestKey(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${channelId}`), {
             headers: authHeader
           });
           if (await handleApiError(detailsRes)) return;

@@ -1997,11 +1997,22 @@
       }
     }
     // ================= SMART DELTA SYNC ENGINE =================
+   let isSyncingPlaylist = false;
+
     async function syncPlaylist(targetPlaylistId) {
-      if (!accessToken) return alert("Connect YouTube account to run Delta Sync.");
+      if (isSyncingPlaylist) return;
+      if (!accessToken) {
+        setStatus("Connect your YouTube account to run Delta Sync.", false, "warning");
+        handleAuth();
+        return;
+      }
+
       const trackedSources = getTrackedSources();
       const sourceMeta = trackedSources[targetPlaylistId];
-      if (!sourceMeta) return alert("No source playlist tracked for this item.");
+      if (!sourceMeta) {
+        setStatus("No source playlist tracked for this item.", false, "warning");
+        return;
+      }
 
       const progressModal = document.getElementById("progressModal");
       const progressFill = document.getElementById("progressBarFill");
@@ -2010,6 +2021,7 @@
       const progressCount = document.getElementById("progressCountLabel");
       const stopBtn = document.getElementById("stopProcessBtn");
 
+      isSyncingPlaylist = true;
       isMergeCancelled = false;
       stopBtn.innerText = "🛑 Stop Process";
       stopBtn.disabled = false;
@@ -2018,6 +2030,28 @@
       progressFill.style.width = "0%";
       progressTitle.innerText = "Checking Source for New Videos...";
       progressSubtitle.innerText = "Reading source uploads and comparing...";
+      progressCount.innerText = "0 of 0 new videos added";
+
+      const handleSyncApiError = async (res) => {
+        if (res.status === 401) {
+          disconnectAccount(true);
+          return true;
+        }
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
+          const msg = reason === "quotaExceeded"
+            ? "⚠️ Daily YouTube API quota reached during Delta Sync. Try again after Midnight PST."
+            : `⚠️ YouTube access denied: ${errData.error?.message || reason}`;
+          setStatus(msg, false, "warning");
+          return true;
+        }
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
+        return false;
+      };
 
       try {
         const existingVideoIds = new Set();
@@ -2027,6 +2061,8 @@
           let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${targetPlaylistId}&maxResults=50`;
           if (token) url += `&pageToken=${token}`;
           const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+          if (await handleSyncApiError(res)) return;
+
           const data = await res.json();
           (data.items || []).forEach(item => {
             if (item.contentDetails?.videoId) existingVideoIds.add(item.contentDetails.videoId);
@@ -2035,7 +2071,7 @@
         } while (token);
 
         if (isMergeCancelled) {
-          progressModal.classList.add("hidden");
+          setStatus("Delta Sync cancelled.", false, "warning");
           return;
         }
 
@@ -2050,15 +2086,22 @@
             let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${sId}&maxResults=50`;
             if (sToken) url += `&pageToken=${sToken}`;
             const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+            if (await handleSyncApiError(res)) return;
+
             const data = await res.json();
             for (const item of (data.items || [])) {
+              if (isUnavailableVideo(item)) continue;
               const vId = item.contentDetails?.videoId || item.snippet?.resourceId?.videoId;
               if (!vId) continue;
-              const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
-              sourceVideos.push({ id: vId, publishedAt: rawDate ? new Date(rawDate).getTime() : 0 });
+              sourceVideos.push({ id: vId, publishedAt: getSafeTimestamp(item) });
             }
             sToken = data.nextPageToken;
           } while (sToken);
+        }
+
+        if (isMergeCancelled) {
+          setStatus("Delta Sync cancelled.", false, "warning");
+          return;
         }
 
         const newVideos = sourceVideos.filter(v => !existingVideoIds.has(v.id));
@@ -2067,16 +2110,21 @@
         let finalNewVideos = Array.from(uniqueMap.values());
 
         if (finalNewVideos.length === 0) {
-          progressModal.classList.add("hidden");
-          alert("Your playlist is completely up-to-date! No new uploads found.");
+          setStatus("Your playlist is already up-to-date! No new uploads found.", false);
           return;
         }
 
-        finalNewVideos.sort((a, b) => a.publishedAt - b.publishedAt);
+        finalNewVideos.sort((a, b) => {
+          if (a.publishedAt === null && b.publishedAt === null) return 0;
+          if (a.publishedAt === null) return 1;
+          if (b.publishedAt === null) return -1;
+          return a.publishedAt - b.publishedAt;
+        });
+
         const estCost = finalNewVideos.length * 50;
         const confirmSync = confirm(`Found ${finalNewVideos.length} new video(s)! Appending them uses ~${estCost} API quota units (instead of regenerating from scratch).\n\nProceed?`);
         if (!confirmSync) {
-          progressModal.classList.add("hidden");
+          setStatus("Delta Sync cancelled.", false);
           return;
         }
 
@@ -2094,16 +2142,25 @@
           progressCount.innerText = `${inserted} of ${total} new videos added`;
         }
 
-        recordCreationUsage(inserted);
-        progressModal.classList.add("hidden");
-        alert(isMergeCancelled ? `Sync stopped. Appended ${inserted} new episodes.` : `Sync complete! Added ${inserted} new episodes to your playlist.`);
-        loadMyPlaylists(true);
+        if (inserted > 0) {
+          recordCreationUsage(inserted);
+        }
 
+        setStatus(
+          isMergeCancelled
+            ? `Sync stopped early. Appended ${inserted} of ${total} new episodes.`
+            : `Sync complete! Added ${inserted} new episode(s) to your playlist.`,
+          false,
+          isMergeCancelled ? "warning" : "info"
+        );
+        await loadMyPlaylists(true);
       } catch (err) {
+        setStatus(`Delta Sync failed: ${err.message}`, false, "error");
+      } finally {
+        isSyncingPlaylist = false;
         progressModal.classList.add("hidden");
-        alert("Sync error: " + err.message);
       }
-    }
+    } 
 
     // ================= VIEW 2: CREATOR EXPLORER LOGIC =================
     

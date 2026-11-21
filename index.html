@@ -876,7 +876,7 @@
   <script>
     const DEFAULT_CLIENT_ID = "1061284018846-i3rj1351g3n538k0h5cpjfote8nc9ihm.apps.googleusercontent.com";
     const PUBLIC_API_KEY = "AIzaSyBN2Vng20BQpVBKIZTPbWPOm9XbX0cG0wo";
-    
+
     function withGuestKey(url) {
       if (accessToken || !PUBLIC_API_KEY) return url;
       return url + (url.includes("?") ? "&" : "?") + `key=${encodeURIComponent(PUBLIC_API_KEY)}`;
@@ -2539,7 +2539,7 @@ let isSearchingCreator = false;
           let url = `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${currentCreatorData.id}&maxResults=50`;
           if (nextCreatorPlaylistsPageToken) url += `&pageToken=${nextCreatorPlaylistsPageToken}`;
 
-          const res = await fetch(url, { headers: authHeader });
+          const res = await fetch(withGuestKey(url), { headers: authHeader });
           if (await handleApiError(res)) return;
 
           const data = await res.json();
@@ -2562,7 +2562,7 @@ let isSearchingCreator = false;
             let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${activeInspectedPlaylist.id}&maxResults=50`;
             if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
 
-            const res = await fetch(url, { headers: authHeader });
+            const res = await fetch(withGuestKey(url), { headers: authHeader });
             if (await handleApiError(res)) return;
 
             const data = await res.json();
@@ -2579,7 +2579,7 @@ let isSearchingCreator = false;
             let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${currentCreatorData.id}&q=${encodeURIComponent(keyword)}&type=video&maxResults=50`;
             if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
 
-            const res = await fetch(url, { headers: authHeader });
+            const res = await fetch(withGuestKey(url), { headers: authHeader });
             if (await handleApiError(res)) return;
 
             const data = await res.json();
@@ -2608,7 +2608,7 @@ let isSearchingCreator = false;
             let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=50`;
             if (nextCreatorVideosPageToken) url += `&pageToken=${nextCreatorVideosPageToken}`;
 
-            const res = await fetch(url, { headers: authHeader });
+            const res = await fetch(withGuestKey(url), { headers: authHeader });
             if (await handleApiError(res)) return;
 
             const data = await res.json();

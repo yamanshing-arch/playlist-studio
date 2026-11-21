@@ -875,6 +875,12 @@
 
   <script>
     const DEFAULT_CLIENT_ID = "1061284018846-i3rj1351g3n538k0h5cpjfote8nc9ihm.apps.googleusercontent.com";
+    const PUBLIC_API_KEY = "AIzaSyBN2Vng20BQpVBKIZTPbWPOm9XbX0cG0wo";
+    
+    function withGuestKey(url) {
+      if (accessToken || !PUBLIC_API_KEY) return url;
+      return url + (url.includes("?") ? "&" : "?") + `key=${encodeURIComponent(PUBLIC_API_KEY)}`;
+    }
     let activeClientId = localStorage.getItem("custom_yt_client_id") || DEFAULT_CLIENT_ID;
     
     // Developer Email List for Auto-VIP Lifetime Access

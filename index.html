@@ -1509,34 +1509,63 @@
 
     async function discoverSeriesPlaylists(seedVideoId, userAccessToken) {
       const headers = { Authorization: `Bearer ${userAccessToken}` };
+
+      const checkApiRes = async (res) => {
+        if (res.status === 401) {
+          disconnectAccount(true);
+          throw new Error("Session expired. Please reconnect your YouTube account.");
+        }
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
+          throw new Error(
+            reason === "quotaExceeded"
+              ? "Daily YouTube API quota reached. Try again after Midnight PST."
+              : `YouTube access denied: ${errData.error?.message || reason}`
+          );
+        }
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
+      };
+
       const vidRes = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${seedVideoId}`,
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${encodeURIComponent(seedVideoId)}`,
         { headers }
       );
+      await checkApiRes(vidRes);
+
       const vidData = await vidRes.json();
       const seedVideo = vidData.items?.[0];
-      if (!seedVideo) throw new Error("Video not found.");
+      if (!seedVideo) throw new Error("Seed video not found (open a single video to scan from preview).");
 
       const primaryChannelId = seedVideo.snippet.channelId;
-      const title = seedVideo.snippet.title;
-      const description = seedVideo.snippet.description;
+      const title = seedVideo.snippet.title || "";
+      const description = seedVideo.snippet.description || "";
       const keywords = extractKeywords(title);
 
-      const candidateChannelIds = [primaryChannelId];
+      const candidateChannelIds = new Set([primaryChannelId]);
       const mentions = extractMentionedChannels(description);
 
       for (const mention of mentions.slice(0, 4)) {
         try {
-          const cleanHandle = mention.replace(/^@/, '');
+          const cleanHandle = mention.replace(/^@/, "");
           const chanRes = await fetch(
-            `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${cleanHandle}`,
+            `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(cleanHandle)}`,
             { headers }
           );
+          if (chanRes.status === 401) {
+            disconnectAccount(true);
+            throw new Error("Session expired. Please reconnect your YouTube account.");
+          }
+          if (!chanRes.ok) continue;
           const chanData = await chanRes.json();
           if (chanData.items?.[0]?.id) {
-            candidateChannelIds.push(chanData.items[0].id);
+            candidateChannelIds.add(chanData.items[0].id);
           }
         } catch (e) {
+          if (e.message?.includes("Session expired")) throw e;
           console.warn("Could not resolve handle:", mention);
         }
       }
@@ -1548,11 +1577,12 @@
           `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${chId}&maxResults=50`,
           { headers }
         );
-        const plData = await plRes.json();
+        await checkApiRes(plRes);
 
+        const plData = await plRes.json();
         if (plData.items) {
           for (const pl of plData.items) {
-            const plTitle = pl.snippet.title.toLowerCase();
+            const plTitle = (pl.snippet?.title || "").toLowerCase();
             const matchScore = keywords.filter(k => plTitle.includes(k)).length;
 
             if (matchScore >= 2) {
@@ -1560,7 +1590,7 @@
                 playlistId: pl.id,
                 title: pl.snippet.title,
                 channelTitle: pl.snippet.channelTitle,
-                itemCount: pl.contentDetails.itemCount,
+                itemCount: pl.contentDetails?.itemCount || 0,
                 matchScore
               });
               break;

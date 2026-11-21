@@ -2632,23 +2632,71 @@ let isSearchingCreator = false;
       });
     }
 
+    let isScanningCollab = false;
+
     async function scanAndMergeCollabPlaylist(sourcePlaylistId, playlistTitle) {
+      if (isScanningCollab) return;
+
       const token = accessToken || "";
       if (!token) {
-        alert("Please connect your YouTube account first to run Multi-POV scan.");
+        setStatus("Please connect your YouTube account first to run Multi-POV scan.", false, "warning");
         handleAuth();
         return;
       }
 
+      const sub = getSubscriptionData();
+      const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
+      const usage = getDailyCreationUsage();
+
+      if (usage.count >= plan.maxPlaylistsPerDay) {
+        alert(`You have reached your daily creation limit (${plan.maxPlaylistsPerDay} playlists/day on ${plan.name}). Upgrade your plan in Plans & Quota Monitor to unlock higher limits.`);
+        navigateTo("plans");
+        return;
+      }
+
+      const progressModal = document.getElementById("progressModal");
+      const progressFill = document.getElementById("progressBarFill");
+      const progressTitle = document.getElementById("progressModalTitle");
+      const progressSubtitle = document.getElementById("progressModalSubtitle");
+      const progressCount = document.getElementById("progressCountLabel");
+      const stopBtn = document.getElementById("stopProcessBtn");
+
+      const handleCollabApiError = async (res) => {
+        if (res.status === 401) {
+          disconnectAccount(true);
+          return true;
+        }
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          const reason = errData.error?.errors?.[0]?.reason || "quotaExceeded";
+          const msg = reason === "quotaExceeded"
+            ? "⚠️ Daily YouTube API quota reached during Multi-POV scan. Try again after Midnight PST."
+            : `⚠️ YouTube access denied: ${errData.error?.message || reason}`;
+          setStatus(msg, false, "warning");
+          return true;
+        }
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
+        return false;
+      };
+
+      isScanningCollab = true;
       setStatus("Scanning playlist for collaborator POVs...", true);
 
       try {
         const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=20&playlistId=${sourcePlaylistId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        if (await handleCollabApiError(res)) return;
+
         const data = await res.json();
         const items = data.items || [];
-        if (items.length === 0) throw new Error("No videos found in this playlist.");
+        if (items.length === 0) {
+          setStatus("No videos found in this playlist.", false, "warning");
+          return;
+        }
 
         const combinedDesc = items.map(it => it.snippet?.description || "").join(" ");
         const playlistMatches = Array.from(new Set(
@@ -2657,13 +2705,23 @@ let isSearchingCreator = false;
             .filter(id => id !== sourcePlaylistId)
         ));
 
-        const discoveredPlaylists = [{ id: sourcePlaylistId, title: playlistTitle || "Primary POV", channelTitle: currentCreatorData?.snippet?.title || "Primary POV" }];
+        const discoveredPlaylists = [{
+          id: sourcePlaylistId,
+          title: playlistTitle || "Primary POV",
+          channelTitle: currentCreatorData?.snippet?.title || "Primary POV"
+        }];
 
         for (const plId of playlistMatches) {
           try {
             const plRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${plId}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
+            if (plRes.status === 401) {
+              disconnectAccount(true);
+              return;
+            }
+            if (!plRes.ok) continue;
+
             const plData = await plRes.json();
             if (plData.items && plData.items.length > 0) {
               discoveredPlaylists.push({
@@ -2678,46 +2736,77 @@ let isSearchingCreator = false;
         }
 
         if (discoveredPlaylists.length <= 1) {
-          alert("No collaborator series playlists found linked in the video descriptions of this playlist.");
-          setStatus("No linked collaborator playlists found.", false);
+          setStatus("No linked collaborator playlists found in this playlist's descriptions.", false, "warning");
           return;
         }
 
         const confirmed = confirm(`Found ${discoveredPlaylists.length} perspectives! Merge all episodes into a chronological master playlist?`);
         if (!confirmed) {
-          setStatus("Scan cancelled.", false);
+          setStatus("Multi-POV scan cancelled.", false);
           return;
         }
 
-        setStatus("Collecting videos across all collaborator playlists...", true);
+        isMergeCancelled = false;
+        stopBtn.innerText = "🛑 Stop Process";
+        stopBtn.disabled = false;
+        progressModal.classList.remove("hidden");
+        progressFill.style.width = "0%";
+        progressTitle.innerText = "Collecting Multi-POV Episodes...";
+        progressSubtitle.innerText = `Reading ${discoveredPlaylists.length} collaborator playlists...`;
+        progressCount.innerText = "0 of 0 videos added";
 
         let allVideos = [];
         for (const pl of discoveredPlaylists) {
+          if (isMergeCancelled) break;
           let pToken = "";
           do {
+            if (isMergeCancelled) break;
             const pRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${pl.id}${pToken ? `&pageToken=${pToken}` : ""}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
+            if (await handleCollabApiError(pRes)) return;
+
             const pData = await pRes.json();
-            const vids = (pData.items || []).map(v => ({
-              videoId: v.contentDetails?.videoId || v.snippet?.resourceId?.videoId,
-              title: v.snippet?.title,
-              publishedAt: new Date(v.contentDetails?.videoPublishedAt || v.snippet?.publishedAt).getTime(),
-              channelTitle: v.snippet?.videoOwnerChannelTitle || pl.channelTitle || ""
-            }));
-            allVideos.push(...vids);
+            for (const v of (pData.items || [])) {
+              if (isUnavailableVideo(v)) continue;
+              const videoId = v.contentDetails?.videoId || v.snippet?.resourceId?.videoId;
+              if (!videoId) continue;
+              allVideos.push({
+                videoId,
+                title: v.snippet?.title || "",
+                publishedAt: getSafeTimestamp(v),
+                channelTitle: v.snippet?.videoOwnerChannelTitle || pl.channelTitle || ""
+              });
+            }
             pToken = pData.nextPageToken || "";
           } while (pToken);
+        }
+
+        if (isMergeCancelled) {
+          setStatus("Multi-POV merge cancelled before playlist creation.", false, "warning");
+          return;
         }
 
         const uniqueMap = new Map();
         allVideos.forEach(v => {
           if (v.videoId && !uniqueMap.has(v.videoId)) uniqueMap.set(v.videoId, v);
         });
-        const sortedVideos = Array.from(uniqueMap.values()).sort((a, b) => a.publishedAt - b.publishedAt);
+        const sortedVideos = Array.from(uniqueMap.values()).sort((a, b) => {
+          if (a.publishedAt === null && b.publishedAt === null) return 0;
+          if (a.publishedAt === null) return 1;
+          if (b.publishedAt === null) return -1;
+          return a.publishedAt - b.publishedAt;
+        });
 
-        setStatus("Creating Master Chronological Playlist...", true);
+        if (sortedVideos.length === 0) {
+          setStatus("No valid videos found across the discovered collaborator playlists.", false, "warning");
+          return;
+        }
+
         const masterTitle = `${playlistTitle || "Collab Series"} [Master Chronological POV]`;
+        progressTitle.innerText = `Creating "${masterTitle}"`;
+        progressSubtitle.innerText = "Registering master playlist with YouTube...";
+
         const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
           method: "POST",
           headers: {
@@ -2732,35 +2821,62 @@ let isSearchingCreator = false;
             status: { privacyStatus: "private" }
           })
         });
-        const newPl = await createRes.json();
+        if (await handleCollabApiError(createRes)) return;
 
+        const newPl = await createRes.json();
+        if (!newPl?.id) throw new Error("YouTube did not return a playlist ID.");
+
+        // Link all collaborator source playlists for future Smart Delta Sync
+        saveTrackedSource(newPl.id, {
+          type: "playlists",
+          sourceIds: discoveredPlaylists.map(p => p.id),
+          title: masterTitle
+        });
+
+        let inserted = 0;
         for (let i = 0; i < sortedVideos.length; i++) {
-          setStatus(`Adding video ${i + 1}/${sortedVideos.length} to master playlist...`, true);
-          await fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              snippet: {
-                playlistId: newPl.id,
-                resourceId: { kind: "youtube#video", videoId: sortedVideos[i].videoId }
-              }
-            })
-          });
+          if (isMergeCancelled) break;
+          const ok = await insertVideoToPlaylist(newPl.id, sortedVideos[i].videoId);
+          if (ok) inserted++;
+          const pct = Math.round(((i + 1) / sortedVideos.length) * 100);
+          progressFill.style.width = `${pct}%`;
+          progressSubtitle.innerText = `Adding episode ${i + 1} of ${sortedVideos.length} (${pct}%)...`;
+          progressCount.innerText = `${inserted} of ${sortedVideos.length} videos added`;
           await new Promise(r => setTimeout(r, 120));
         }
 
-        recordCreationUsage(sortedVideos.length);
-        setStatus(`Master playlist compiled (${sortedVideos.length} videos)!`, false);
-        alert(`Created "${masterTitle}" with ${sortedVideos.length} chronological episodes!`);
-        if (typeof loadMyPlaylists === "function") loadMyPlaylists(true);
+        if (inserted > 0) {
+          recordCreationUsage(inserted);
+        }
 
+        const linksContainer = document.getElementById("successLinksContainer");
+        linksContainer.innerHTML = "";
+        const link = document.createElement("a");
+        link.href = `https://www.youtube.com/playlist?list=${newPl.id}`;
+        link.target = "_blank";
+        link.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between shadow-md transition";
+        link.innerHTML = `<span>▶ ${masterTitle}</span><span class="text-[10px] opacity-80">${inserted} vids</span>`;
+        linksContainer.appendChild(link);
+
+        document.getElementById("successModalHeading").innerText = isMergeCancelled ? "Process Stopped" : "Master POV Ready!";
+        document.getElementById("successModalDetail").innerText = isMergeCancelled
+          ? `Stopped early after adding ${inserted} of ${sortedVideos.length} chronological episodes.`
+          : `Compiled ${inserted} chronological episodes across ${discoveredPlaylists.length} collaborator perspectives.`;
+        document.getElementById("successModal").classList.remove("hidden");
+
+        setStatus(
+          isMergeCancelled
+            ? `Multi-POV merge stopped early (${inserted}/${sortedVideos.length} videos).`
+            : `Master POV playlist compiled (${inserted} videos across ${discoveredPlaylists.length} perspectives)!`,
+          false,
+          isMergeCancelled ? "warning" : "info"
+        );
+        if (typeof loadMyPlaylists === "function") await loadMyPlaylists(true);
       } catch (err) {
-        console.error(err);
-        alert("Collab scan error: " + err.message);
-        setStatus("Collab scan failed.", false);
+        setStatus(`Collab scan failed: ${err.message}`, false, "error");
+      } finally {
+        isScanningCollab = false;
+        progressModal.classList.add("hidden");
       }
     }
 

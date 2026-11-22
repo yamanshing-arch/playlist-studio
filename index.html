@@ -919,11 +919,11 @@
 
     // Subscription & Quota Tracking State
     const PLAN_LIMITS = {
-      starter: { maxPlaylistsPerDay: 2, maxVideosPerBatch: 20, name: "Starter Free" },
-      monthly: { maxPlaylistsPerDay: 50, maxVideosPerBatch: 100, name: "1-Month Pass" },
-      quarterly: { maxPlaylistsPerDay: 50, maxVideosPerBatch: 100, name: "Quarterly Pass" },
-      annual: { maxPlaylistsPerDay: 100, maxVideosPerBatch: 100, name: "Annual VIP" },
-      developer: { maxPlaylistsPerDay: 1000, maxVideosPerBatch: 200, name: "Developer VIP (Lifetime)" }
+      starter: { maxPlaylistsPerDay: 2, maxVideosPerBatch: 20, name: "Starter Free", shortName: "Starter" },
+      monthly: { maxPlaylistsPerDay: 50, maxVideosPerBatch: 100, name: "1-Month Pass", shortName: "1-Month" },
+      quarterly: { maxPlaylistsPerDay: 50, maxVideosPerBatch: 100, name: "Quarterly Pass", shortName: "Quarterly" },
+      annual: { maxPlaylistsPerDay: 100, maxVideosPerBatch: 100, name: "Annual VIP", shortName: "Annual VIP" },
+      developer: { maxPlaylistsPerDay: 1000, maxVideosPerBatch: 200, name: "Developer VIP (Lifetime)", shortName: "Dev VIP" }
     };
 
     window.addEventListener("DOMContentLoaded", () => {

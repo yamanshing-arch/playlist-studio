@@ -2670,10 +2670,11 @@ let isSearchingCreator = false;
 
       const countEl = document.getElementById("contentCountLabel");
       if (isPlMode) {
-        if (countEl) countEl.innerText = `${creatorPlaylists.length} playlists loaded`;
+        if (countEl) countEl.innerText = `${creatorPlaylists.length} ${creatorPlaylists.length === 1 ? "playlist" : "playlists"} loaded`;
       } else {
-        const totalNote = totalCreatorVideosCount ? ` / ${totalCreatorVideosCount.toLocaleString()} total` : "";
-        if (countEl) countEl.innerText = `${creatorVideos.length} videos loaded${totalNote}`;
+        const showChannelTotal = !activeInspectedPlaylist && totalCreatorVideosCount;
+        const totalNote = showChannelTotal ? ` / ${totalCreatorVideosCount.toLocaleString()} total` : "";
+        if (countEl) countEl.innerText = `${creatorVideos.length} ${creatorVideos.length === 1 ? "video" : "videos"} loaded${totalNote}`;
       }
 
       if (!visibleItems.length) {
@@ -2688,7 +2689,8 @@ let isSearchingCreator = false;
         const title = item.snippet?.title || "Untitled";
         const cleanTitle = title.replace(/['"]/g, "");
         const thumb = item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || "";
-        const subtitle = isPlMode ? `${item.contentDetails?.itemCount || 0} videos` : "Single Video";
+        const plCount = item.contentDetails?.itemCount || 0;
+        const subtitle = isPlMode ? `${plCount} ${plCount === 1 ? "video" : "videos"}` : "Single Video";
         const rawDate = item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
         const publishedDate = rawDate ? new Date(rawDate).toLocaleDateString() : "";
         const isChecked = selectedCreatorItemIds.has(id);

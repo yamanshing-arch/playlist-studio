@@ -1137,7 +1137,7 @@
       const plan = PLAN_LIMITS[planKey] || PLAN_LIMITS.starter;
 
       const headerText = document.getElementById("headerPlanText");
-      if (headerText) headerText.innerText = plan.name;
+      if (headerText) headerText.innerText = plan.shortName || plan.name;
 
       const drawerBadge = document.getElementById("drawerPlanBadge");
       if (drawerBadge) drawerBadge.innerText = planKey;
@@ -1180,6 +1180,22 @@
           daysLeftLabel.className = days <= 3 ? "text-xs text-rose-400 font-bold" : "text-xs text-emerald-400 font-semibold";
         }
       }
+
+      const planBtnLabels = {
+        starter: "Switch to Free",
+        monthly: "Activate Pass",
+        quarterly: "Activate Pass",
+        annual: "Activate VIP"
+      };
+      Object.keys(planBtnLabels).forEach(key => {
+        const btn = document.getElementById(`planBtn-${key}`);
+        if (!btn) return;
+        const isActive = key === planKey;
+        btn.innerText = isActive ? "Current Plan" : planBtnLabels[key];
+        btn.disabled = isActive;
+        btn.classList.toggle("opacity-60", isActive);
+        btn.classList.toggle("cursor-default", isActive);
+      });
 
       updateQuotaMonitorUI();
     }

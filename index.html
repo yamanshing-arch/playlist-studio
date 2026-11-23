@@ -3149,7 +3149,7 @@ let isSearchingCreator = false;
     }
 
     // ================= UNIFIED SORTING & AUTO-CHUNKING CREATION ENGINE =================
-    async function executeBatchMerge(selectedIds, newTitle, sortOrder, sourceType) {
+   async function executeBatchMerge(selectedIds, newTitle, sortOrder, sourceType) {
       const progressModal = document.getElementById("progressModal");
       const progressFill = document.getElementById("progressBarFill");
       const progressTitle = document.getElementById("progressModalTitle");
@@ -3158,6 +3158,7 @@ let isSearchingCreator = false;
       const stopBtn = document.getElementById("stopProcessBtn");
 
       isMergeCancelled = false;
+      isActiveBuildRunning = true;
       stopBtn.innerText = "🛑 Stop Process";
       stopBtn.disabled = false;
 
@@ -3241,6 +3242,7 @@ let isSearchingCreator = false;
           if (!uniqueMap.has(vo.id)) uniqueMap.set(vo.id, vo);
         });
         let finalVideos = Array.from(uniqueMap.values());
+        const duplicateCount = videoObjects.length - finalVideos.length;
 
         if (sortOrder === "oldest_first" || sortOrder === "newest_first") {
           const ascending = sortOrder === "oldest_first";
@@ -3256,14 +3258,41 @@ let isSearchingCreator = false;
         const plan = PLAN_LIMITS[sub.plan] || PLAN_LIMITS.starter;
         const CHUNK_SIZE = plan.maxVideosPerBatch || 20;
 
+        // Check for an unfinished build matching this exact selection
+        const signature = buildBatchSignature(selectedIds, sortOrder, sourceType);
+        const existingCp = getBatchCheckpoint();
+        let activeCheckpoint = null;
+        let insertedSet = new Set();
+
+        if (existingCp && existingCp.signature === signature && Array.isArray(existingCp.insertedIds) && existingCp.insertedIds.length > 0) {
+          const remainingCount = finalVideos.filter(v => !existingCp.insertedIds.includes(v.id)).length;
+          if (remainingCount > 0) {
+            const shouldResume = confirm(
+              `Found an unfinished build for "${existingCp.newTitle}" (${existingCp.insertedIds.length} of ${finalVideos.length} videos already added).\n\nClick OK to resume and skip completed parts/videos, or Cancel to start fresh.`
+            );
+            if (shouldResume) {
+              activeCheckpoint = existingCp;
+              newTitle = existingCp.newTitle || newTitle;
+              insertedSet = new Set(existingCp.insertedIds);
+            } else {
+              clearBatchCheckpoint();
+            }
+          } else {
+            clearBatchCheckpoint();
+          }
+        }
+
         let chunks = [];
+        const dupNote = duplicateCount > 0 ? ` (skipped ${duplicateCount} duplicate${duplicateCount === 1 ? "" : "s"})` : "";
 
         if (finalVideos.length > CHUNK_SIZE) {
           const numParts = Math.ceil(finalVideos.length / CHUNK_SIZE);
-          const autoSplit = confirm(`You selected ${finalVideos.length} videos. Under your ${plan.name}, batches are sectioned into maximum ${CHUNK_SIZE} videos per playlist to protect your daily quota.\n\nClick OK to automatically split this into ${numParts} chronological parts (Part 1, Part 2, etc.), or Cancel to abort.`);
-          if (!autoSplit) {
-            setStatus("Playlist creation cancelled.", false);
-            return;
+          if (!activeCheckpoint) {
+            const autoSplit = confirm(`You selected ${finalVideos.length} unique videos${dupNote}. Under your ${plan.name}, batches are sectioned into maximum ${CHUNK_SIZE} videos per playlist to protect your daily quota.\n\nClick OK to automatically split this into ${numParts} chronological parts (Part 1, Part 2, etc.), or Cancel to abort.`);
+            if (!autoSplit) {
+              setStatus("Playlist creation cancelled.", false);
+              return;
+            }
           }
 
           for (let i = 0; i < finalVideos.length; i += CHUNK_SIZE) {
@@ -3276,61 +3305,83 @@ let isSearchingCreator = false;
           chunks.push({ partNum: 0, videos: finalVideos });
         }
 
+        if (!activeCheckpoint) {
+          activeCheckpoint = {
+            signature,
+            newTitle,
+            partIds: {},
+            insertedIds: []
+          };
+          saveBatchCheckpoint(activeCheckpoint);
+        }
+
         let createdPlaylists = [];
-        let totalInsertedOverall = 0;
+        let totalInsertedOverall = insertedSet.size;
+        let newlyInsertedCount = 0;
         let apiErrorMsg = null;
 
         for (const chunk of chunks) {
           if (isMergeCancelled) break;
 
           const partTitle = chunk.partNum > 0 ? `${newTitle} (Part ${chunk.partNum})` : newTitle;
-          progressTitle.innerText = `Creating "${partTitle}"`;
-          progressSubtitle.innerText = `Registering playlist with YouTube...`;
+          const remainingInChunk = chunk.videos.filter(v => !insertedSet.has(v.id));
+          let targetId = activeCheckpoint.partIds[chunk.partNum] || null;
 
-          const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              snippet: { title: partTitle, description: "Compiled with chronological sorting via Playlist Studio." },
-              status: { privacyStatus: "private" }
-            })
-          });
-
-          if (createRes.status === 401) {
-            disconnectAccount(true);
-            return;
+          // Skip parts that are already 100% completed
+          if (remainingInChunk.length === 0 && targetId) {
+            createdPlaylists.push({ title: partTitle, id: targetId, count: chunk.videos.length });
+            continue;
           }
 
-          if (!createRes.ok) {
-            const errInfo = await createRes.json().catch(() => ({}));
-            const reason = errInfo.error?.errors?.[0]?.reason || "";
-            apiErrorMsg = reason === "quotaExceeded"
-              ? "⚠️ Daily YouTube API quota reached while creating playlists."
-              : `YouTube API Error: ${errInfo.error?.message || `HTTP ${createRes.status}`}`;
-            setStatus(apiErrorMsg, false, reason === "quotaExceeded" ? "warning" : "error");
-            break;
+          if (!targetId) {
+            progressTitle.innerText = `Creating "${partTitle}"`;
+            progressSubtitle.innerText = `Registering playlist with YouTube...`;
+
+            const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                snippet: { title: partTitle, description: "Compiled with chronological sorting via Playlist Studio." },
+                status: { privacyStatus: "private" }
+              })
+            });
+
+            if (createRes.status === 401) {
+              disconnectAccount(true);
+              return;
+            }
+
+            if (!createRes.ok) {
+              const errInfo = await createRes.json().catch(() => ({}));
+              const reason = errInfo.error?.errors?.[0]?.reason || "";
+              apiErrorMsg = reason === "quotaExceeded"
+                ? "⚠️ Daily YouTube API quota reached while creating playlists."
+                : `YouTube API Error: ${errInfo.error?.message || `HTTP ${createRes.status}`}`;
+              setStatus(apiErrorMsg, false, reason === "quotaExceeded" ? "warning" : "error");
+              break;
+            }
+
+            const createdData = await createRes.json();
+            targetId = createdData.id;
+            activeCheckpoint.partIds[chunk.partNum] = targetId;
+            saveBatchCheckpoint(activeCheckpoint);
+          } else {
+            progressTitle.innerText = `Resuming "${partTitle}"`;
+            progressSubtitle.innerText = `Skipping already-added videos...`;
           }
 
-          const createdData = await createRes.json();
-          const targetId = createdData.id;
           createdPlaylists.push({ title: partTitle, id: targetId, count: chunk.videos.length });
 
-          if (sourceType === "playlists") {
-            saveTrackedSource(targetId, { type: "playlists", sourceIds: selectedIds, title: newTitle });
-          } else if (activeInspectedPlaylist) {
-            saveTrackedSource(targetId, { type: "playlists", sourceIds: [activeInspectedPlaylist.id], title: newTitle });
-          } else if (currentCreatorData?.contentDetails?.relatedPlaylists?.uploads) {
-            saveTrackedSource(targetId, { type: "channel_uploads", sourceIds: [currentCreatorData.contentDetails.relatedPlaylists.uploads], title: newTitle });
-          }
-
-          let insertedInChunk = 0;
-          for (const item of chunk.videos) {
+          for (const item of remainingInChunk) {
             if (isMergeCancelled) break;
 
             const success = await insertVideoToPlaylist(targetId, item.id);
             if (success) {
-              insertedInChunk++;
+              insertedSet.add(item.id);
+              activeCheckpoint.insertedIds.push(item.id);
               totalInsertedOverall++;
+              newlyInsertedCount++;
+              saveBatchCheckpoint(activeCheckpoint);
             }
 
             const pct = Math.round((totalInsertedOverall / finalVideos.length) * 100);
@@ -3340,8 +3391,24 @@ let isSearchingCreator = false;
           }
         }
 
-        if (totalInsertedOverall > 0) {
-          recordCreationUsage(totalInsertedOverall);
+        // Link all parts together so Delta Sync checks across every sibling part
+        const allPartIds = createdPlaylists.map(p => p.id);
+        createdPlaylists.forEach(pl => {
+          if (sourceType === "playlists") {
+            saveTrackedSource(pl.id, { type: "playlists", sourceIds: selectedIds, siblingIds: allPartIds, title: newTitle });
+          } else if (activeInspectedPlaylist) {
+            saveTrackedSource(pl.id, { type: "playlists", sourceIds: [activeInspectedPlaylist.id], siblingIds: allPartIds, title: newTitle });
+          } else if (currentCreatorData?.contentDetails?.relatedPlaylists?.uploads) {
+            saveTrackedSource(pl.id, { type: "channel_uploads", sourceIds: [currentCreatorData.contentDetails.relatedPlaylists.uploads], siblingIds: allPartIds, title: newTitle });
+          }
+        });
+
+        if (newlyInsertedCount > 0) {
+          recordCreationUsage(newlyInsertedCount);
+        }
+
+        if (!isMergeCancelled && !apiErrorMsg && totalInsertedOverall >= finalVideos.length) {
+          clearBatchCheckpoint();
         }
 
         if (createdPlaylists.length === 0) {
@@ -3356,10 +3423,10 @@ let isSearchingCreator = false;
           ? "Process Stopped"
           : (apiErrorMsg ? "Partially Completed" : "Playlists Ready!");
         document.getElementById("successModalDetail").innerText = isMergeCancelled
-          ? `Stopped early. Added ${totalInsertedOverall} videos across created collections.`
+          ? `Stopped early. Added ${totalInsertedOverall} of ${finalVideos.length} videos. Re-run the same selection anytime to resume.`
           : (apiErrorMsg
-            ? `Stopped due to an API error after adding ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s).`
-            : `Successfully compiled ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s) in chronological order.`);
+            ? `Stopped due to an API error after adding ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s). Re-run anytime to resume.`
+            : `Successfully compiled ${totalInsertedOverall} unique videos${dupNote} across ${createdPlaylists.length} playlist(s) in chronological order.`);
 
         createdPlaylists.forEach(pl => {
           const link = document.createElement("a");
@@ -3372,11 +3439,12 @@ let isSearchingCreator = false;
 
         document.getElementById("successModal").classList.remove("hidden");
         if (!apiErrorMsg) {
-          setStatus(`Compiled ${totalInsertedOverall} videos across ${createdPlaylists.length} playlist(s).`, false);
+          setStatus(`Compiled ${totalInsertedOverall} videos${dupNote} across ${createdPlaylists.length} playlist(s).`, false);
         }
       } catch (err) {
         setStatus(`Merge failed: ${err.message}`, false, "error");
       } finally {
+        isActiveBuildRunning = false;
         progressModal.classList.add("hidden");
       }
     }

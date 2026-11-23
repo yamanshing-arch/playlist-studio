@@ -2458,6 +2458,8 @@ let isSearchingCreator = false;
       updateCreatorSelectedBadge();
 
       if (mode === "playlists") {
+        activeInspectedPlaylist = null;
+        document.getElementById("videoSourceBanner").classList.add("hidden");
         document.getElementById("mode-playlists").className = "py-2 rounded-lg text-xs font-bold bg-purple-600 text-white";
         document.getElementById("mode-videos").className = "py-2 rounded-lg text-xs font-bold text-slate-400";
         resetAndLoadCreatorPlaylists();

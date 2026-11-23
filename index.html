@@ -2129,7 +2129,7 @@
     // ================= SMART DELTA SYNC ENGINE =================
    let isSyncingPlaylist = false;
 
-    async function syncPlaylist(targetPlaylistId) {
+   async function syncPlaylist(targetPlaylistId) {
       if (isSyncingPlaylist) return;
       if (!accessToken) {
         setStatus("Connect your YouTube account to run Delta Sync.", false, "warning");
@@ -2144,6 +2144,11 @@
         return;
       }
 
+      const siblingIds = Array.isArray(sourceMeta.siblingIds) && sourceMeta.siblingIds.length > 0
+        ? sourceMeta.siblingIds
+        : [targetPlaylistId];
+      const appendTargetId = siblingIds[siblingIds.length - 1] || targetPlaylistId;
+
       const progressModal = document.getElementById("progressModal");
       const progressFill = document.getElementById("progressBarFill");
       const progressTitle = document.getElementById("progressModalTitle");
@@ -2152,6 +2157,7 @@
       const stopBtn = document.getElementById("stopProcessBtn");
 
       isSyncingPlaylist = true;
+      isActiveBuildRunning = true;
       isMergeCancelled = false;
       stopBtn.innerText = "🛑 Stop Process";
       stopBtn.disabled = false;
@@ -2159,7 +2165,9 @@
       progressModal.classList.remove("hidden");
       progressFill.style.width = "0%";
       progressTitle.innerText = "Checking Source for New Videos...";
-      progressSubtitle.innerText = "Reading source uploads and comparing...";
+      progressSubtitle.innerText = siblingIds.length > 1
+        ? `Comparing source uploads across all ${siblingIds.length} parts...`
+        : "Reading source uploads and comparing...";
       progressCount.innerText = "0 of 0 new videos added";
 
       const handleSyncApiError = async (res) => {
@@ -2185,20 +2193,23 @@
 
       try {
         const existingVideoIds = new Set();
-        let token = "";
-        do {
+        for (const sibId of siblingIds) {
           if (isMergeCancelled) break;
-          let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${targetPlaylistId}&maxResults=50`;
-          if (token) url += `&pageToken=${token}`;
-          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-          if (await handleSyncApiError(res)) return;
+          let token = "";
+          do {
+            if (isMergeCancelled) break;
+            let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${sibId}&maxResults=50`;
+            if (token) url += `&pageToken=${token}`;
+            const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+            if (await handleSyncApiError(res)) return;
 
-          const data = await res.json();
-          (data.items || []).forEach(item => {
-            if (item.contentDetails?.videoId) existingVideoIds.add(item.contentDetails.videoId);
-          });
-          token = data.nextPageToken;
-        } while (token);
+            const data = await res.json();
+            (data.items || []).forEach(item => {
+              if (item.contentDetails?.videoId) existingVideoIds.add(item.contentDetails.videoId);
+            });
+            token = data.nextPageToken;
+          } while (token);
+        }
 
         if (isMergeCancelled) {
           setStatus("Delta Sync cancelled.", false, "warning");
@@ -2252,7 +2263,8 @@
         });
 
         const estCost = finalNewVideos.length * 50;
-        const confirmSync = confirm(`Found ${finalNewVideos.length} new video(s)! Appending them uses ~${estCost} API quota units (instead of regenerating from scratch).\n\nProceed?`);
+        const partNote = siblingIds.length > 1 ? ` (appending to Part ${siblingIds.length})` : "";
+        const confirmSync = confirm(`Found ${finalNewVideos.length} new video(s)${partNote}! Appending them uses ~${estCost} API quota units (instead of regenerating from scratch).\n\nProceed?`);
         if (!confirmSync) {
           setStatus("Delta Sync cancelled.", false);
           return;
@@ -2264,7 +2276,7 @@
 
         for (const item of finalNewVideos) {
           if (isMergeCancelled) break;
-          const ok = await insertVideoToPlaylist(targetPlaylistId, item.id);
+          const ok = await insertVideoToPlaylist(appendTargetId, item.id);
           if (ok) inserted++;
           const pct = Math.round((inserted / total) * 100);
           progressFill.style.width = `${pct}%`;
@@ -2288,6 +2300,7 @@
         setStatus(`Delta Sync failed: ${err.message}`, false, "error");
       } finally {
         isSyncingPlaylist = false;
+        isActiveBuildRunning = false;
         progressModal.classList.add("hidden");
       }
     } 

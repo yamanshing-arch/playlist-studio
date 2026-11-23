@@ -898,7 +898,42 @@
     let tokenClient;
     let isMergeCancelled = false;
     let isGuestSession = false;
+    let isActiveBuildRunning = false;
 
+    window.addEventListener("beforeunload", (e) => {
+      if (isActiveBuildRunning) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    });
+
+    function getBatchCheckpoint() {
+      try {
+        return JSON.parse(localStorage.getItem("ps_batch_checkpoint") || "null");
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveBatchCheckpoint(data) {
+      try {
+        localStorage.setItem("ps_batch_checkpoint", JSON.stringify(data));
+      } catch (e) {
+        console.warn("Could not save checkpoint:", e);
+      }
+    }
+
+    function clearBatchCheckpoint() {
+      localStorage.removeItem("ps_batch_checkpoint");
+    }
+
+    function buildBatchSignature(selectedIds, sortOrder, sourceType) {
+      return JSON.stringify({
+        ids: [...selectedIds].sort(),
+        sortOrder,
+        sourceType
+      });
+    }
     // Library State
     let libraryPlaylists = [];
     let selectedLibraryIds = new Set();

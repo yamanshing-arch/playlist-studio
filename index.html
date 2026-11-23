@@ -2581,7 +2581,7 @@ let isSearchingCreator = false;
 
           nextCreatorPlaylistsPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
           loadMoreBtn.innerText = "⬇️ Load More Playlists (Next 50)";
-          setStatus(`Loaded ${creatorPlaylists.length} playlists.`, false);
+          setStatus(`Loaded ${creatorPlaylists.length} ${creatorPlaylists.length === 1 ? "playlist" : "playlists"}.`, false);
         } else {
           if (activeInspectedPlaylist) {
             setStatus(`Loading episodes from "${activeInspectedPlaylist.title}"...`, true);
@@ -2599,7 +2599,7 @@ let isSearchingCreator = false;
 
             nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
             loadMoreBtn.innerText = "⬇️ Load More Episodes (Next 50)";
-            setStatus(`Loaded ${creatorVideos.length} videos from "${activeInspectedPlaylist.title}".`, false);
+            setStatus(`Loaded ${creatorVideos.length} ${creatorVideos.length === 1 ? "video" : "videos"} from "${activeInspectedPlaylist.title}".`, false);
           } else if (keyword) {
             setStatus(`Searching all ${totalCreatorVideosCount} videos for "${keyword}"...`, true);
             let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${currentCreatorData.id}&q=${encodeURIComponent(keyword)}&type=video&maxResults=50`;
@@ -2622,7 +2622,7 @@ let isSearchingCreator = false;
 
             nextCreatorVideosPageToken ? loadMoreBtn.classList.remove("hidden") : loadMoreBtn.classList.add("hidden");
             loadMoreBtn.innerText = "⬇️ Load More Matching Videos";
-            setStatus(`Found ${creatorVideos.length} videos matching "${keyword}".`, false);
+            setStatus(`Found ${creatorVideos.length} ${creatorVideos.length === 1 ? "video" : "videos"} matching "${keyword}".`, false);
           } else {
             setStatus(`Loading recent uploads...`, true);
             const uploadsId = currentCreatorData.contentDetails?.relatedPlaylists?.uploads;

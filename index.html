@@ -2674,7 +2674,8 @@ let isSearchingCreator = false;
       if (isPlMode) {
         if (countEl) countEl.innerText = `${creatorPlaylists.length} ${creatorPlaylists.length === 1 ? "playlist" : "playlists"} loaded`;
       } else {
-        const showChannelTotal = !activeInspectedPlaylist && totalCreatorVideosCount;
+        const hasKeyword = !!(document.getElementById("searchKeywordInput")?.value || "").trim();
+        const showChannelTotal = !activeInspectedPlaylist && !hasKeyword && totalCreatorVideosCount;
         const totalNote = showChannelTotal ? ` / ${totalCreatorVideosCount.toLocaleString()} total` : "";
         if (countEl) countEl.innerText = `${creatorVideos.length} ${creatorVideos.length === 1 ? "video" : "videos"} loaded${totalNote}`;
       }

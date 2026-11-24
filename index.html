@@ -1900,6 +1900,15 @@
       localStorage.setItem("yt_tracked_sources", JSON.stringify(sources));
     }
 
+    function parseTrackedSourceFromDescription(desc, title) {
+      if (!desc) return null;
+      const match = desc.match(/\[PS-SRC:([a-z_]+):([a-zA-Z0-9_,-]+)\]/);
+      if (!match) return null;
+      const sourceIds = match[2].split(",").filter(Boolean);
+      if (!sourceIds.length) return null;
+      return { type: match[1], sourceIds, title: title || "Synced Playlist" };
+    }
+
     // ================= VIEW 1: LIBRARY LOGIC =================
     async function loadMyPlaylists(reset = false) {
       const container = document.getElementById("libraryPlaylistsContainer");
@@ -1962,6 +1971,14 @@
           thumb: p.snippet.thumbnails?.medium?.url || p.snippet.thumbnails?.default?.url || ""
         }));
         libraryPlaylists = libraryPlaylists.concat(fetched);
+
+        const trackedNow = getTrackedSources();
+        fetched.forEach(pl => {
+          if (!trackedNow[pl.id]) {
+            const recovered = parseTrackedSourceFromDescription(pl.description, pl.title);
+            if (recovered) saveTrackedSource(pl.id, recovered);
+          }
+        });
 
         renderLibraryPlaylists();
 

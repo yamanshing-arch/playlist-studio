@@ -395,17 +395,18 @@
       <div class="space-y-3 text-xs text-slate-300 text-left leading-relaxed">
         <div>
           <p class="font-bold text-slate-100 mb-1">💡 Why was this created?</p>
-          <p class="text-slate-400">YouTube does not allow users to combine multiple playlists, sort video runs chronologically into proper binge orders, or merge cross-channel multiplayer POV perspectives. Playlist Studio eliminates that friction, letting you organize, filter, deduplicate, and compile sequential marathons straight to your personal YouTube account.</p>
+          <p class="text-slate-400">YouTube does not let viewers combine multiple playlists, fix reverse-chronological binge order, or weave multiplayer collaborator POVs together. Playlist Studio removes that friction—letting you explore, filter, deduplicate, and compile chronological marathons straight into your YouTube library.</p>
         </div>
 
         <div>
           <p class="font-bold text-slate-100 mb-1">⚡ Core Capabilities</p>
           <ul class="list-disc list-inside space-y-1 text-slate-400">
-            <li><strong class="text-slate-300">Intelligent Ordering:</strong> Sort collections by release date so episodic series play in chronological order.</li>
-            <li><strong class="text-slate-300">Collab POV Detection:</strong> Cross-references collaborator links in video descriptions to weave alternating viewpoints into a single master marathon.</li>
-            <li><strong class="text-slate-300">Delta Sync:</strong> Check linked source playlists for newly uploaded videos and append only the new episodes without regenerating.</li>
-            <li><strong class="text-slate-300">Automatic Batch Splitting:</strong> Automatically sections oversized marathons into sequential Part 1, Part 2, etc.</li>
-            <li><strong class="text-slate-300">Quota Guard:</strong> Real-time cost estimation and safety controls protect your daily YouTube quota limits.</li>
+            <li><strong class="text-slate-300">Guest & Connected Modes:</strong> Explore channels by name, @handle, or URL without signing in; connect YouTube whenever you're ready to save.</li>
+            <li><strong class="text-slate-300">Sequence Studio:</strong> Sort Oldest/Newest, Invert, Shuffle, live-filter on screen, and bulk-strip keywords like <em>#shorts</em>.</li>
+            <li><strong class="text-slate-300">Collab Multi-POV Detection:</strong> Scans video descriptions to find collaborator playlists and merge viewpoints chronologically.</li>
+            <li><strong class="text-slate-300">Multi-Part Smart Delta Sync:</strong> Checks across all split parts and appends only newly uploaded episodes without regenerating from scratch.</li>
+            <li><strong class="text-slate-300">Auto-Splitting, Deduplication & Smart Resume:</strong> Automatically skips duplicate videos, splits oversized marathons into parts, and checkpoints progress so interrupted builds can resume without wasting quota.</li>
+            <li><strong class="text-slate-300">100% Client-Side Privacy:</strong> Runs locally in your browser with custom Google Cloud Client ID support and no external servers.</li>
           </ul>
         </div>
 
@@ -415,7 +416,7 @@
             Conceived & developed by <strong class="text-purple-400 font-bold">Yaman</strong> in collaboration with <strong class="text-purple-400 font-bold">Gemini</strong>.
           </p>
           <p class="text-[11px] text-slate-400 mt-1">Contact: <code class="text-purple-300">yamanshing@gmail.com</code></p>
-          <p class="text-[11px] text-slate-500 mt-0.5">Built with YouTube Data API v3, Google Identity Services, and TailwindCSS.</p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Playlist Studio v7.8 • Built with YouTube Data API v3, Google Identity Services, and TailwindCSS.</p>
         </div>
       </div>
 
@@ -3447,7 +3448,7 @@ let isSearchingCreator = false;
         isActiveBuildRunning = false;
         progressModal.classList.add("hidden");
       }
-    }
+    } 
 
     async function insertVideoToPlaylist(playlistId, videoId) {
       try {

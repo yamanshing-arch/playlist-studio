@@ -2734,6 +2734,15 @@ let isSearchingCreator = false;
       const isPlMode = creatorMode === "playlists";
       const sourceItems = isPlMode ? creatorPlaylists : creatorVideos;
 
+      const selectBtn = document.querySelector("button[onclick*='toggleSelectAllCreatorItems']");
+      if (selectBtn) {
+        const allSelected = sourceItems.length > 0 && sourceItems.every(item => {
+          const itemId = isPlMode ? item.id : (item.id?.videoId || item.snippet?.resourceId?.videoId || item.contentDetails?.videoId || item.id);
+          return selectedCreatorItemIds.has(itemId);
+        });
+        selectBtn.textContent = allSelected ? "Deselect All" : "Select All";
+      }
+
       const visibleItems = localFilter 
         ? sourceItems.filter(item => (item.snippet?.title || "").toLowerCase().includes(localFilter))
         : sourceItems;

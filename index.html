@@ -1987,6 +1987,19 @@
       container.innerHTML = "";
       document.getElementById("librarySelectedCount").innerText = `${selectedLibraryIds.size} selected`;
 
+      const libEstBar = document.getElementById("libraryQuotaEstimatorBar");
+      if (libEstBar) {
+        let videoCount = 0;
+        libraryPlaylists.forEach(pl => {
+          if (selectedLibraryIds.has(pl.id)) {
+            videoCount += parseInt(pl.count || 0, 10);
+          }
+        });
+        const estUnits = videoCount > 0 ? 50 + (videoCount * 50) : 0;
+        const label = videoCount === 1 ? "video" : "videos";
+        libEstBar.innerHTML = `<span class="text-slate-400">Est. Quota Cost:</span> <span class="font-bold text-purple-300">${estUnits > 0 ? "~" : ""}${estUnits.toLocaleString()} units (${videoCount.toLocaleString()} ${label})</span>`;
+      }
+
       const visiblePlaylists = localFilter 
         ? libraryPlaylists.filter(p => p.title.toLowerCase().includes(localFilter))
         : libraryPlaylists;

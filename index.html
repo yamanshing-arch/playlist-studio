@@ -2504,8 +2504,19 @@ let isSearchingCreator = false;
       }
       const estBar = document.getElementById("quotaEstimatorBar");
       if (estBar) {
-        const count = selectedCreatorItemIds.size;
-        estBar.innerHTML = `<span class="text-slate-400">Est. Quota Cost:</span> <span class="font-bold text-purple-300">${count * 50} units (${count} items)</span>`;
+        let videoCount = 0;
+        if (creatorMode === "playlists") {
+          creatorPlaylists.forEach(pl => {
+            if (selectedCreatorItemIds.has(pl.id)) {
+              videoCount += parseInt(pl.contentDetails?.itemCount || 0, 10);
+            }
+          });
+        } else {
+          videoCount = selectedCreatorItemIds.size;
+        }
+        const estUnits = videoCount > 0 ? 50 + (videoCount * 50) : 0;
+        const label = videoCount === 1 ? "video" : "videos";
+        estBar.innerHTML = `<span class="text-slate-400">Est. Quota Cost:</span> <span class="font-bold text-purple-300">${estUnits > 0 ? "~" : ""}${estUnits.toLocaleString()} units (${videoCount.toLocaleString()} ${label})</span>`;
       }
     }
 

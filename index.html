@@ -1801,6 +1801,7 @@
         document.getElementById("view-library").classList.remove("hidden");
         document.getElementById("nav-library").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-purple-300 flex items-center gap-3";
         document.getElementById("screenTitle").innerText = "My Library";
+        if (!accessToken) loadMyPlaylists(true);
       } else if (view === "search") {
         document.getElementById("view-search").classList.remove("hidden");
         document.getElementById("nav-search").className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold bg-slate-800 text-purple-300 flex items-center gap-3";
@@ -2309,7 +2310,7 @@
         isActiveBuildRunning = false;
         progressModal.classList.add("hidden");
       }
-    } 
+    }
 
     // ================= VIEW 2: CREATOR EXPLORER LOGIC =================
     
@@ -3453,7 +3454,7 @@ let isSearchingCreator = false;
         isActiveBuildRunning = false;
         progressModal.classList.add("hidden");
       }
-    } 
+    }
 
     async function insertVideoToPlaylist(playlistId, videoId) {
       try {

@@ -1406,6 +1406,8 @@
       if (povContainer) povContainer.innerHTML = "";
       const scanBtn = document.getElementById("previewPovScanBtn");
       if (scanBtn) {
+        const isPlaylistPreview = (watchUrl || "").includes("/playlist?list=");
+        scanBtn.classList.toggle("hidden", isPlaylistPreview);
         scanBtn.disabled = false;
         scanBtn.innerText = "✨ Scan Multi-POV Series";
       }

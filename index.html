@@ -3019,7 +3019,7 @@ let isSearchingCreator = false;
         progressTitle.innerText = `Creating "${masterTitle}"`;
         progressSubtitle.innerText = "Registering master playlist with YouTube...";
 
-        const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+         const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -3401,15 +3401,29 @@ let isSearchingCreator = false;
             progressTitle.innerText = `Creating "${partTitle}"`;
             progressSubtitle.innerText = `Registering playlist with YouTube...`;
 
-            const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+           const createRes = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
               method: "POST",
               headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
               body: JSON.stringify({
-                snippet: { title: partTitle, description: "Compiled with chronological sorting via Playlist Studio." },
+                snippet: {
+                  title: partTitle,
+                  description: (() => {
+                    let srcTag = "";
+                    if (sourceType === "playlists" && selectedIds.length) {
+                      srcTag = `[PS-SRC:playlists:${selectedIds.join(",")}]`;
+                    } else if (activeInspectedPlaylist) {
+                      srcTag = `[PS-SRC:playlists:${activeInspectedPlaylist.id}]`;
+                    } else if (currentCreatorData?.contentDetails?.relatedPlaylists?.uploads) {
+                      srcTag = `[PS-SRC:channel_uploads:${currentCreatorData.contentDetails.relatedPlaylists.uploads}]`;
+                    }
+                    return srcTag
+                      ? `Compiled with chronological sorting via Playlist Studio.\n\n${srcTag}`
+                      : "Compiled with chronological sorting via Playlist Studio.";
+                  })()
+                },
                 status: { privacyStatus: "private" }
               })
             });
-
             if (createRes.status === 401) {
               disconnectAccount(true);
               return;

@@ -3606,6 +3606,12 @@ let isSearchingCreator = false;
             snippet: { playlistId: playlistId, resourceId: { kind: "youtube#video", videoId: videoId } }
           })
         });
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          if (errData.error?.errors?.[0]?.reason === "quotaExceeded") {
+            markQuotaExhausted();
+          }
+        }
         return res.ok;
       } catch (e) {
         return false;

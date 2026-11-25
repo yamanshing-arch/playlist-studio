@@ -1327,7 +1327,8 @@
 
    function updateQuotaMonitorUI() {
       const isCustomId = !!localStorage.getItem("custom_yt_client_id");
-      const totalPool = isCustomId ? 10000 : 100000;
+      const customPool = parseInt(localStorage.getItem("custom_yt_quota_pool") || "10000", 10);
+      const totalPool = isCustomId ? (Number.isFinite(customPool) && customPool > 0 ? customPool : 10000) : studioQuotaPool;
       const usage = getDailyCreationUsage();
       const remainingUnits = Math.max(0, totalPool - usage.units);
 
@@ -1337,7 +1338,8 @@
 
       const quotaPoolTag = document.getElementById("quotaPoolTag");
       if (quotaPoolTag) {
-        quotaPoolTag.innerText = isCustomId ? "Custom Client (10k)" : "Studio 100k Pool";
+        const poolShort = formatPoolShort(totalPool);
+        quotaPoolTag.innerText = isCustomId ? `Custom Client (${poolShort})` : `Studio ${poolShort} Pool`;
         quotaPoolTag.className = isCustomId
           ? "text-[10px] font-mono text-purple-300 bg-purple-950 px-2 py-0.5 rounded border border-purple-800/60 whitespace-nowrap shrink-0"
           : "text-[10px] font-mono text-emerald-300 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-800/60 whitespace-nowrap shrink-0";

@@ -1412,7 +1412,9 @@
     function saveCustomClientId() {
       const val = document.getElementById("customClientIdInput").value.trim();
       if (!val) return alert("Please enter a valid Google Cloud Client ID.");
+      const poolVal = document.getElementById("customQuotaPoolSelect")?.value || "10000";
       localStorage.setItem("custom_yt_client_id", val);
+      localStorage.setItem("custom_yt_quota_pool", poolVal);
       activeClientId = val;
       tokenClient = null;
       disconnectAccount(false);
@@ -1422,8 +1424,11 @@
 
     function resetCustomClientId() {
       localStorage.removeItem("custom_yt_client_id");
+      localStorage.removeItem("custom_yt_quota_pool");
       activeClientId = DEFAULT_CLIENT_ID;
       document.getElementById("customClientIdInput").value = "";
+      const quotaSelect = document.getElementById("customQuotaPoolSelect");
+      if (quotaSelect) quotaSelect.value = "10000";
       tokenClient = null;
       disconnectAccount(false);
       updateQuotaMonitorUI();

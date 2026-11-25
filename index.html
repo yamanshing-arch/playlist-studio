@@ -1320,10 +1320,11 @@
 
       const quotaCapacityText = document.getElementById("quotaCapacityText");
       if (quotaCapacityText) {
-        const unitsPerPlaylist = 50 + (batchSize * 50);
+        const sampleBatch = Math.min(batchSize, 200);
+        const unitsPerPlaylist = 50 + (sampleBatch * 50);
         const potentialPlaylists = Math.floor(remainingUnits / unitsPerPlaylist);
         const maxSingleRunVids = Math.max(0, Math.floor((remainingUnits - 50) / 50));
-        quotaCapacityText.innerHTML = `Sufficient quota to create <strong>~${potentialPlaylists.toLocaleString()} playlists</strong> (at ${batchSize} vids each) or <strong>1 large collection</strong> with up to <strong>${maxSingleRunVids.toLocaleString()} videos</strong>.`;
+        quotaCapacityText.innerHTML = `Sufficient quota to create <strong>~${potentialPlaylists.toLocaleString()} playlists</strong> (at ${sampleBatch} vids each) or <strong>1 large collection</strong> with up to <strong>${maxSingleRunVids.toLocaleString()} videos</strong>.`;
       }
     }
 

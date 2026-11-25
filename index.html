@@ -1120,6 +1120,19 @@
       }
     }
 
+    function claimOneTimeTrial() {
+      if (localStorage.getItem("ps_welcome_trial_claimed") || localStorage.getItem("ps_promo_redeemed_yaman246")) {
+        alert("Your one-time 30-day welcome voucher has already been claimed on this browser.");
+        initSubscriptionState();
+        return;
+      }
+
+      const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
+      localStorage.setItem("ps_user_plan", JSON.stringify({ plan: "monthly", expiresAt: expiry, isWelcomeTrial: true }));
+      localStorage.setItem("ps_welcome_trial_claimed", "true");
+      initSubscriptionState();
+      alert("🎉 1-Month Welcome Pass Activated!\n\nYou now have 30 days of Full Studio Access.");
+    }
     // ================= DEVELOPER ACCOUNT RECOGNITION =================
     async function checkDeveloperAccountStatus() {
       if (!accessToken) return;

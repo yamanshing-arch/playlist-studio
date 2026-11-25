@@ -1576,6 +1576,9 @@
       const spinner = document.getElementById("statusSpinner");
 
       box.innerText = msg;
+      if (typeof msg === "string" && msg.includes("Daily YouTube API quota reached")) {
+        markQuotaExhausted();
+      }
       isLoading ? spinner.classList.remove("hidden") : spinner.classList.add("hidden");
 
       if (type === "error") {

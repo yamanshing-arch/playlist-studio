@@ -1325,6 +1325,25 @@
       updateQuotaMonitorUI();
     }
 
+   function getActiveQuotaPool() {
+      const isCustomId = !!localStorage.getItem("custom_yt_client_id");
+      const customPool = parseInt(localStorage.getItem("custom_yt_quota_pool") || "10000", 10);
+      return isCustomId ? (Number.isFinite(customPool) && customPool > 0 ? customPool : 10000) : studioQuotaPool;
+    }
+
+    function markQuotaExhausted() {
+      const today = new Date().toISOString().slice(0, 10);
+      const cur = getDailyCreationUsage();
+      const totalPool = getActiveQuotaPool();
+      if (cur.units < totalPool) {
+        localStorage.setItem(`ps_usage_${today}`, JSON.stringify({
+          count: cur.count,
+          units: totalPool
+        }));
+      }
+      updateQuotaMonitorUI();
+    } 
+
    function updateQuotaMonitorUI() {
       const isCustomId = !!localStorage.getItem("custom_yt_client_id");
       const customPool = parseInt(localStorage.getItem("custom_yt_quota_pool") || "10000", 10);

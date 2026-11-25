@@ -971,6 +971,36 @@
       annual: { maxPlaylistsPerDay: 100, maxVideosPerBatch: 100, name: "Annual VIP", shortName: "Annual VIP" },
       developer: { maxPlaylistsPerDay: 1000, maxVideosPerBatch: 5000, name: "Developer VIP (Lifetime)", shortName: "Dev VIP" }
     };
+    let studioQuotaPool = 100000;
+
+    function formatPoolShort(units) {
+      if (units >= 1000000) return `${+(units / 1000000).toFixed(1)}M`;
+      if (units >= 1000) return `${Math.round(units / 1000)}k`;
+      return String(units);
+    }
+
+    async function loadRemoteConfig() {
+      try {
+        const res = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) return;
+        const cfg = await res.json();
+
+        if (Number.isFinite(cfg.studioQuotaPool) && cfg.studioQuotaPool > 0) {
+          studioQuotaPool = cfg.studioQuotaPool;
+        }
+        if (cfg.planLimits && typeof cfg.planLimits === "object") {
+          Object.keys(cfg.planLimits).forEach(key => {
+            if (PLAN_LIMITS[key]) {
+              Object.assign(PLAN_LIMITS[key], cfg.planLimits[key]);
+            }
+          });
+        }
+        initSubscriptionState();
+        updateQuotaMonitorUI();
+      } catch (e) {
+        // Offline or local file:// fallback — silently keep built-in defaults
+      }
+    }
     window.addEventListener("DOMContentLoaded", () => {
       checkDirectInviteUrl();
 

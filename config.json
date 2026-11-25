@@ -1,0 +1,10 @@
+{
+  "studioQuotaPool": 100000,
+  "planLimits": {
+    "starter": { "maxPlaylistsPerDay": 2, "maxVideosPerBatch": 20 },
+    "monthly": { "maxPlaylistsPerDay": 50, "maxVideosPerBatch": 100 },
+    "quarterly": { "maxPlaylistsPerDay": 50, "maxVideosPerBatch": 100 },
+    "annual": { "maxPlaylistsPerDay": 100, "maxVideosPerBatch": 100 },
+    "developer": { "maxPlaylistsPerDay": 1000, "maxVideosPerBatch": 5000 }
+  }
+}

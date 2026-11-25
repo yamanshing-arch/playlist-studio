@@ -1007,7 +1007,7 @@
         // Offline or local file:// fallback — silently keep built-in defaults
       }
     }
-    window.addEventListener("DOMContentLoaded", () => {
+   window.addEventListener("DOMContentLoaded", () => {
       checkDirectInviteUrl();
 
       if (!localStorage.getItem("ps_has_onboarded")) {
@@ -1018,10 +1018,15 @@
       if (customInput && localStorage.getItem("custom_yt_client_id")) {
         customInput.value = localStorage.getItem("custom_yt_client_id");
       }
+      const customQuotaSelect = document.getElementById("customQuotaPoolSelect");
+      if (customQuotaSelect && localStorage.getItem("custom_yt_quota_pool")) {
+        customQuotaSelect.value = localStorage.getItem("custom_yt_quota_pool");
+      }
 
       initSubscriptionState();
       updateQuotaMonitorUI();
       startQuotaCountdown();
+      loadRemoteConfig();
 
       const cachedToken = localStorage.getItem("yt_access_token");
       const expiry = localStorage.getItem("yt_token_expiry");

@@ -1150,7 +1150,11 @@
     }
 
     function initSubscriptionState() {
-      const sub = getSubscriptionData();
+      let sub = getSubscriptionData();
+      if (sub.plan !== "developer" && sub.expiresAt && sub.expiresAt <= Date.now()) {
+        sub = { plan: "starter", expiresAt: null };
+        localStorage.setItem("ps_user_plan", JSON.stringify(sub));
+      }
       const planKey = sub.plan || "starter";
       const plan = PLAN_LIMITS[planKey] || PLAN_LIMITS.starter;
 
@@ -1179,7 +1183,8 @@
 
       const promoCard = document.getElementById("promoBoxCard");
       if (promoCard) {
-        if (planKey === "developer" || (sub.expiresAt && sub.expiresAt > Date.now())) {
+        const alreadyClaimed = !!localStorage.getItem("ps_welcome_trial_claimed") || !!localStorage.getItem("ps_promo_redeemed_yaman246");
+        if (alreadyClaimed || planKey === "developer" || (sub.expiresAt && sub.expiresAt > Date.now())) {
           promoCard.classList.add("hidden");
         } else {
           promoCard.classList.remove("hidden");

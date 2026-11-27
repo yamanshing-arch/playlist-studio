@@ -3543,14 +3543,20 @@ let isSearchingCreator = false;
             snippet: { playlistId: playlistId, resourceId: { kind: "youtube#video", videoId: videoId } }
           })
         });
+        if (res.status === 401) {
+          disconnectAccount(true);
+          throw new Error("AUTH_EXPIRED");
+        }
         if (res.status === 403) {
           const errData = await res.json().catch(() => ({}));
           if (errData.error?.errors?.[0]?.reason === "quotaExceeded") {
             markQuotaExhausted();
+            throw new Error("QUOTA_EXCEEDED");
           }
         }
         return res.ok;
       } catch (e) {
+        if (e.message === "QUOTA_EXCEEDED" || e.message === "AUTH_EXPIRED") throw e;
         return false;
       }
     }

@@ -1780,7 +1780,7 @@
       const masterPlaylistId = createdPlaylist?.id;
       if (!masterPlaylistId) throw new Error("YouTube did not return a playlist ID.");
 
-      let inserted = 0;
+       let inserted = 0;
       for (const vid of sortedVideos) {
         const ok = await insertVideoToPlaylist(masterPlaylistId, vid.videoId);
         if (ok) inserted++;
@@ -3052,11 +3052,20 @@ let isSearchingCreator = false;
           title: masterTitle
         });
 
-        let inserted = 0;
+       let inserted = 0;
+        let hitQuotaLimit = false;
         for (let i = 0; i < sortedVideos.length; i++) {
           if (isMergeCancelled) break;
-          const ok = await insertVideoToPlaylist(newPl.id, sortedVideos[i].videoId);
-          if (ok) inserted++;
+          try {
+            const ok = await insertVideoToPlaylist(newPl.id, sortedVideos[i].videoId);
+            if (ok) inserted++;
+          } catch (err) {
+            if (err.message === "QUOTA_EXCEEDED") {
+              hitQuotaLimit = true;
+              break;
+            }
+            throw err;
+          }
           const pct = Math.round(((i + 1) / sortedVideos.length) * 100);
           progressFill.style.width = `${pct}%`;
           progressSubtitle.innerText = `Adding episode ${i + 1} of ${sortedVideos.length} (${pct}%)...`;
@@ -3077,26 +3086,34 @@ let isSearchingCreator = false;
         link.innerHTML = `<span>▶ ${masterTitle}</span><span class="text-[10px] opacity-80">${inserted} vids</span>`;
         linksContainer.appendChild(link);
 
-        document.getElementById("successModalHeading").innerText = isMergeCancelled ? "Process Stopped" : "Master POV Ready!";
-        document.getElementById("successModalDetail").innerText = isMergeCancelled
-          ? `Stopped early after adding ${inserted} of ${sortedVideos.length} chronological episodes.`
-          : `Compiled ${inserted} chronological episodes across ${discoveredPlaylists.length} collaborator perspectives.`;
+        document.getElementById("successModalHeading").innerText = hitQuotaLimit
+          ? "Quota Limit Reached"
+          : (isMergeCancelled ? "Process Stopped" : "Master POV Ready!");
+        document.getElementById("successModalDetail").innerText = hitQuotaLimit
+          ? `Stopped after adding ${inserted} of ${sortedVideos.length} episodes because your daily YouTube API quota ran out.`
+          : (isMergeCancelled
+            ? `Stopped early after adding ${inserted} of ${sortedVideos.length} chronological episodes.`
+            : `Compiled ${inserted} chronological episodes across ${discoveredPlaylists.length} collaborator perspectives.`);
         document.getElementById("successModal").classList.remove("hidden");
 
         setStatus(
-          isMergeCancelled
-            ? `Multi-POV merge stopped early (${inserted}/${sortedVideos.length} videos).`
-            : `Master POV playlist compiled (${inserted} videos across ${discoveredPlaylists.length} perspectives)!`,
+          hitQuotaLimit
+            ? `⚠️ Daily YouTube API quota reached. Stopped after adding ${inserted}/${sortedVideos.length} episodes.`
+            : (isMergeCancelled
+              ? `Multi-POV merge stopped early (${inserted}/${sortedVideos.length} videos).`
+              : `Master POV playlist compiled (${inserted} videos across ${discoveredPlaylists.length} perspectives)!`),
           false,
-          isMergeCancelled ? "warning" : "info"
+          (hitQuotaLimit || isMergeCancelled) ? "warning" : "info"
         );
-        if (typeof loadMyPlaylists === "function") await loadMyPlaylists(true);
+        if (!hitQuotaLimit && typeof loadMyPlaylists === "function") await loadMyPlaylists(true);
       } catch (err) {
-        setStatus(`Collab scan failed: ${err.message}`, false, "error");
+        if (err.message !== "AUTH_EXPIRED") {
+          setStatus(`Collab scan failed: ${err.message}`, false, "error");
+        }
       } finally {
         isScanningCollab = false;
         progressModal.classList.add("hidden");
-      }
+      } 
     }
 
     function showCreatorItemDetail(id) {

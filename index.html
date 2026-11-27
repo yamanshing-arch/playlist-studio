@@ -2178,9 +2178,9 @@
       }
     }
     // ================= SMART DELTA SYNC ENGINE =================
-   let isSyncingPlaylist = false;
+    let isSyncingPlaylist = false;
 
-   async function syncPlaylist(targetPlaylistId) {
+    async function syncPlaylist(targetPlaylistId) {
       if (isSyncingPlaylist) return;
       if (!accessToken) {
         setStatus("Connect your YouTube account to run Delta Sync.", false, "warning");
@@ -2323,12 +2323,21 @@
 
         progressTitle.innerText = "Appending New Episodes...";
         let inserted = 0;
+        let hitQuotaLimit = false;
         const total = finalNewVideos.length;
 
         for (const item of finalNewVideos) {
           if (isMergeCancelled) break;
-          const ok = await insertVideoToPlaylist(appendTargetId, item.id);
-          if (ok) inserted++;
+          try {
+            const ok = await insertVideoToPlaylist(appendTargetId, item.id);
+            if (ok) inserted++;
+          } catch (err) {
+            if (err.message === "QUOTA_EXCEEDED") {
+              hitQuotaLimit = true;
+              break;
+            }
+            throw err;
+          }
           const pct = Math.round((inserted / total) * 100);
           progressFill.style.width = `${pct}%`;
           progressSubtitle.innerText = `Appending new video (${pct}%)...`;
@@ -2340,15 +2349,19 @@
         }
 
         setStatus(
-          isMergeCancelled
-            ? `Sync stopped early. Appended ${inserted} of ${total} new episodes.`
-            : `Sync complete! Added ${inserted} new episode(s) to your playlist.`,
+          hitQuotaLimit
+            ? `⚠️ Daily YouTube API quota reached. Appended ${inserted} of ${total} new episodes before stopping.`
+            : (isMergeCancelled
+              ? `Sync stopped early. Appended ${inserted} of ${total} new episodes.`
+              : `Sync complete! Added ${inserted} new episode(s) to your playlist.`),
           false,
-          isMergeCancelled ? "warning" : "info"
+          (hitQuotaLimit || isMergeCancelled) ? "warning" : "info"
         );
-        await loadMyPlaylists(true);
+        if (!hitQuotaLimit) await loadMyPlaylists(true);
       } catch (err) {
-        setStatus(`Delta Sync failed: ${err.message}`, false, "error");
+        if (err.message !== "AUTH_EXPIRED") {
+          setStatus(`Delta Sync failed: ${err.message}`, false, "error");
+        }
       } finally {
         isSyncingPlaylist = false;
         isActiveBuildRunning = false;
